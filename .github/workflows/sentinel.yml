@@ -1,0 +1,29 @@
+name: Anchor-Sentinel Security Scan
+
+on:
+  pull_request:
+    branches: [ "master", "main" ]
+  push:
+    branches: [ "master", "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  security_scan:
+    name: Anchor-Sentinel Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Install Anchor-Sentinel
+        run: cargo install --git https://github.com/ramprasadgoud/anchor-sentinel --branch main 
+
+      - name: Run Security Scan
+        run: anchor-sentinel scan . --format github

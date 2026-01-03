@@ -1,0 +1,8 @@
+/Users/ramprasadgoud/Desktop/ETH/Rust/Anchor-Sentinel/target/debug/deps/zmij-a62914b48d3298fc.d: /Users/ramprasadgoud/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zmij-1.0.5/src/lib.rs /Users/ramprasadgoud/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zmij-1.0.5/src/traits.rs
+
+/Users/ramprasadgoud/Desktop/ETH/Rust/Anchor-Sentinel/target/debug/deps/libzmij-a62914b48d3298fc.rlib: /Users/ramprasadgoud/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zmij-1.0.5/src/lib.rs /Users/ramprasadgoud/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zmij-1.0.5/src/traits.rs
+
+/Users/ramprasadgoud/Desktop/ETH/Rust/Anchor-Sentinel/target/debug/deps/libzmij-a62914b48d3298fc.rmeta: /Users/ramprasadgoud/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zmij-1.0.5/src/lib.rs /Users/ramprasadgoud/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zmij-1.0.5/src/traits.rs
+
+/Users/ramprasadgoud/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zmij-1.0.5/src/lib.rs:
+/Users/ramprasadgoud/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zmij-1.0.5/src/traits.rs:
