@@ -73,6 +73,23 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+/// Initializes GitHub Actions workflow for CI/CD integration.
+///
+/// Creates a `.github/workflows/sentinel.yml` file that runs Anchor-Sentinel
+/// on every push/PR to main or master branches. The workflow outputs findings
+/// as GitHub Annotations for inline PR comments.
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success, or an error if file creation fails.
+///
+/// # Example
+///
+/// ```rust,ignore
+/// // User runs: anchor-sentinel init
+/// run_init()?;
+/// // Creates .github/workflows/sentinel.yml
+/// ```
 fn run_init() -> Result<()> {
     let workflow_dir = PathBuf::from(".github/workflows");
     let workflow_path = workflow_dir.join("sentinel.yml");
@@ -109,7 +126,7 @@ jobs:
           override: true
 
       - name: Install Anchor-Sentinel
-        run: cargo install --git https://github.com/ramprasadgoud/anchor-sentinel --branch main 
+        run: cargo install --git https://github.com/Ramprasad4121/anchor-sentinel --branch main 
 
       - name: Run Security Scan
         run: anchor-sentinel scan . --format github
@@ -329,6 +346,29 @@ fn perform_scan(path: &PathBuf, recursive: bool) -> Result<Vec<Finding>> {
     Ok(all_findings)
 }
 
+/// Performs differential security analysis between two program versions.
+///
+/// Compares vulnerability findings between an old (base) and new (target) version
+/// of a program to identify:
+/// - **New Risks**: Vulnerabilities introduced in the new version
+/// - **Fixed Issues**: Vulnerabilities present in the old version but not in the new
+///
+/// This is useful for PR reviews and tracking security regressions.
+///
+/// # Arguments
+///
+/// * `old_path` - Path to the base/old version of the program
+/// * `new_path` - Path to the target/new version of the program
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success, printing a comparison report to stdout.
+///
+/// # Example
+///
+/// ```rust,ignore
+/// run_diff(PathBuf::from("./v1"), PathBuf::from("./v2"))?;
+/// ```
 fn run_diff(old_path: PathBuf, new_path: PathBuf) -> Result<()> {
     println!("{}", "[*] Running Differential Analysis...".blue().bold());
 
@@ -404,6 +444,28 @@ fn run_diff(old_path: PathBuf, new_path: PathBuf) -> Result<()> {
     Ok(())
 }
 
+/// Collects all Rust source files from a directory.
+///
+/// Traverses the specified directory and collects paths to all `.rs` files,
+/// excluding files in the `target` directory to avoid analyzing build artifacts.
+///
+/// # Arguments
+///
+/// * `dir` - The root directory to search
+/// * `recursive` - If `true`, searches all subdirectories; if `false`, only the top level
+///
+/// # Returns
+///
+/// A `Vec<PathBuf>` containing paths to all discovered Rust source files.
+///
+/// # Example
+///
+/// ```rust,ignore
+/// let files = collect_rust_files(&PathBuf::from("./programs"), true)?;
+/// for file in files {
+///     println!("Found: {}", file.display());
+/// }
+/// ```
 fn collect_rust_files(dir: &PathBuf, recursive: bool) -> Result<Vec<PathBuf>> {
     use walkdir::WalkDir;
 

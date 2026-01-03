@@ -52,7 +52,7 @@ anchor-sentinel scan ./programs --severity high
 
 ### Run specific detectors
 ```bash
-anchor-sentinel scan ./programs --only V001,V003git push -u origin main
+anchor-sentinel scan ./programs --only V001,V003
 ```
 
 ### Compare two versions (Diff)

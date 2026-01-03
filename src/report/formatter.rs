@@ -164,7 +164,7 @@ pub fn to_sarif(report: &Report) -> String {
                 "driver": {
                     "name": "Anchor-Sentinel",
                     "version": report.metadata.version,
-                    "informationUri": "https://github.com/ramprasadgoud/anchor-sentinel",
+                    "informationUri": "https://github.com/Ramprasad4121/anchor-sentinel",
                     "rules": report.findings.iter().map(|f| {
                         serde_json::json!({
                             "id": f.detector_id,
