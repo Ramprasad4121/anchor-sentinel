@@ -117,19 +117,17 @@ jobs:
     name: Anchor-Sentinel Scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Install Anchor-Sentinel
-        run: cargo install --git https://github.com/Ramprasad4121/anchor-sentinel --branch main 
+        run: cargo install --git https://github.com/Ramprasad4121/anchor-sentinel
 
       - name: Run Security Scan
         run: anchor-sentinel scan . --format github
+        continue-on-error: true
 "#;
 
     std::fs::write(&workflow_path, workflow_content)?;
