@@ -44,6 +44,7 @@ mod lamports_rounding;
 mod unchecked_init;
 mod unsafe_cpi;
 mod token_2022;
+pub mod utils;
 
 pub use integer_overflow::IntegerOverflowDetector;
 pub use missing_owner::MissingOwnerDetector;

@@ -100,6 +100,9 @@ impl MissingSignerDetector {
     /// Checks for common authority-related naming patterns and considers
     /// whether the account is mutable or uses AccountInfo type.
     ///
+    /// NOTE: Accounts with `seeds` constraints (PDAs) are excluded because
+    /// PDAs cannot sign transactions directly.
+    ///
     /// # Arguments
     ///
     /// * `field` - The account field to analyze
@@ -108,6 +111,16 @@ impl MissingSignerDetector {
     ///
     /// `true` if the account appears to be an authority that should sign.
     fn is_potential_authority(&self, field: &AccountField) -> bool {
+        // Skip PDA accounts - they have seeds constraints and cannot be signers
+        if self.is_pda_field(field) {
+            return false;
+        }
+        
+        // Skip UncheckedAccount with CHECK comment (intentionally unchecked)
+        if matches!(field.ty, AccountType::UncheckedAccount) {
+            return false;
+        }
+        
         let name = field.name.to_lowercase();
 
         let authority_patterns = [
@@ -132,6 +145,36 @@ impl MissingSignerDetector {
         let is_account_info = matches!(field.ty, AccountType::AccountInfo);
 
         has_authority_name || (is_mutable && is_account_info)
+    }
+    
+    /// Checks if a field is a PDA (has seeds constraint).
+    ///
+    /// PDAs cannot be signers in the traditional sense, so they should
+    /// not trigger missing signer warnings.
+    ///
+    /// # Arguments
+    ///
+    /// * `field` - The account field to analyze
+    ///
+    /// # Returns
+    ///
+    /// `true` if the account has a seeds constraint (is a PDA).
+    fn is_pda_field(&self, field: &AccountField) -> bool {
+        for constraint in &field.constraints {
+            // Check for seeds constraint
+            if let ConstraintType::Seeds(_) = constraint.constraint_type {
+                return true;
+            }
+            // Check raw constraint for seeds pattern
+            if constraint.raw.contains("seeds") {
+                return true;
+            }
+            // Check for bump constraint (implies PDA)
+            if constraint.raw.contains("bump") {
+                return true;
+            }
+        }
+        false
     }
 
     /// Checks if there's an external signer verification for this field.

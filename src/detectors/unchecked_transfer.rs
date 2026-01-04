@@ -34,6 +34,7 @@
 //! - CWE-129: Improper Validation of Array Index
 
 use crate::detectors::VulnerabilityDetector;
+use crate::detectors::utils::should_skip_line;
 use crate::parser::AnalysisContext;
 use crate::report::{Finding, Severity};
 use regex::Regex;
@@ -164,6 +165,11 @@ impl VulnerabilityDetector for UncheckedTransferDetector {
         ];
 
         for (line_num, line) in source.lines().enumerate() {
+            // Skip non-code contexts (comments, imports, struct fields)
+            if should_skip_line(line) {
+                continue;
+            }
+            
             for pattern in &patterns {
                 if pattern.is_match(line) && !self.has_amount_validation(source, line_num) {
                     let amount = self.extract_amount(line);

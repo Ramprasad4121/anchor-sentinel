@@ -29,6 +29,7 @@
 //! - CWE-829: Inclusion of Functionality from Untrusted Control Sphere
 
 use crate::detectors::VulnerabilityDetector;
+use crate::detectors::utils::{should_skip_line, is_error_context};
 use crate::parser::AnalysisContext;
 use crate::report::{Finding, Severity};
 use regex::Regex;
@@ -37,6 +38,11 @@ use regex::Regex;
 ///
 /// Identifies oracle price feed usage without staleness or validity checks,
 /// which could enable price manipulation attacks.
+///
+/// This detector uses context-aware filtering to reduce false positives:
+/// - Skips imports, comments, struct definitions
+/// - Only flags actual function calls, not keyword mentions
+/// - Avoids flagging error message definitions
 pub struct OracleRisksDetector;
 
 impl OracleRisksDetector {
@@ -49,15 +55,6 @@ impl OracleRisksDetector {
     ///
     /// Searches within +15 lines of the oracle call for validation patterns
     /// such as timestamp checks, price > 0, or staleness assertions.
-    ///
-    /// # Arguments
-    ///
-    /// * `source` - The complete source code to analyze
-    /// * `oracle_line` - The line number where oracle usage was found
-    ///
-    /// # Returns
-    ///
-    /// `true` if validation is present, `false` otherwise.
     fn has_staleness_check(&self, source: &str, oracle_line: usize) -> bool {
         let lines: Vec<&str> = source.lines().collect();
         let start = oracle_line;
@@ -68,17 +65,51 @@ impl OracleRisksDetector {
                 let lower = line.to_lowercase();
                 if lower.contains("timestamp")
                     || lower.contains("staleness")
+                    || lower.contains("stale")
                     || lower.contains("price > 0")
                     || lower.contains("price != 0")
+                    || lower.contains("price.is_positive")
                     || lower.contains("updated_at")
-                    || lower.contains("clock")
-                    || lower.contains("slot")
+                    || lower.contains("publish_time")
+                    || lower.contains("publish_slot")
+                    || lower.contains("clock.slot")
+                    || lower.contains("clock.unix_timestamp")
+                    || lower.contains("no_older_than")
+                    || lower.contains("max_age")
+                    || lower.contains("require!(") && (lower.contains("price") || lower.contains("slot"))
                 {
                     return true;
                 }
             }
         }
         false
+    }
+
+    /// Checks if this is an actual oracle method call, not just a keyword mention.
+    ///
+    /// Returns true only for patterns like:
+    /// - `get_price(`
+    /// - `get_current_price(`
+    /// - `.price(`
+    /// - `oracle.load(`
+    fn is_actual_oracle_call(&self, line: &str) -> bool {
+        let lower = line.to_lowercase();
+        
+        // These are actual oracle consumption patterns
+        lower.contains("get_price(")
+            || lower.contains("get_current_price(")
+            || lower.contains("get_asset_price(")
+            || lower.contains(".price(")
+            || lower.contains("oracle.load(")
+            || lower.contains("price_feed.load(")
+            || lower.contains("get_price_no_older_than(")
+            || lower.contains("get_ema_price(")
+            // Pyth-specific
+            || lower.contains("price_account.get_price_unchecked(")
+            || lower.contains("price_update.get_price_")
+            // Switchboard-specific  
+            || lower.contains("aggregator.get_result(")
+            || lower.contains("feed.get_result(")
     }
 }
 
@@ -102,51 +133,43 @@ impl VulnerabilityDetector for OracleRisksDetector {
          3. Use oracle's built-in staleness checks if available"
     }
 
-    /// Runs the oracle risks detector.
+    /// Runs the oracle risks detector with context-aware filtering.
     ///
-    /// Scans for oracle-related patterns (Pyth, Switchboard, Chainlink, etc.)
-    /// and verifies that staleness/validity checks exist.
-    ///
-    /// # Arguments
-    ///
-    /// * `context` - The analysis context containing parsed source code
-    ///
-    /// # Returns
-    ///
-    /// A vector of findings for each oracle usage without validation.
+    /// Key improvements to reduce false positives:
+    /// - Skips comments, imports, struct definitions
+    /// - Only flags actual oracle method calls, not keyword mentions
+    /// - Skips error message definitions
     fn detect(&self, context: &AnalysisContext) -> Vec<Finding> {
         let mut findings = Vec::new();
         let source = &context.source_code;
 
-        let patterns = [
-            Regex::new(r"pyth").unwrap(),
-            Regex::new(r"switchboard").unwrap(),
-            Regex::new(r"chainlink").unwrap(),
-            Regex::new(r"oracle").unwrap(),
-            Regex::new(r"price_feed").unwrap(),
-            Regex::new(r"get_price").unwrap(),
-        ];
-
         for (line_num, line) in source.lines().enumerate() {
-            let lower = line.to_lowercase();
-            for pattern in &patterns {
-                if pattern.is_match(&lower) && !self.has_staleness_check(source, line_num) {
-                    findings.push(Finding {
-                        id: format!("V014-{}", line_num + 1),
-                        detector_id: self.id().to_string(),
-                        title: "Oracle usage without staleness check".to_string(),
-                        description: "Price feed used without validating freshness or value.".to_string(),
-                        severity: self.severity(),
-                        file_path: context.file_path.clone(),
-                        line: line_num + 1,
-                        location: format!("{}:{}", context.file_path, line_num + 1),
-                        code_snippet: Some(line.trim().to_string()),
-                        remediation: self.remediation().to_string(),
-                        cwe: self.cwe().map(|s| s.to_string()),
-                        confidence: 0.65,
-                    });
-                    break;
-                }
+            // Skip non-code contexts (comments, imports, struct fields)
+            if should_skip_line(line) {
+                continue;
+            }
+            
+            // Skip error enum definitions
+            if is_error_context(source, line_num) {
+                continue;
+            }
+
+            // Only flag actual oracle method calls
+            if self.is_actual_oracle_call(line) && !self.has_staleness_check(source, line_num) {
+                findings.push(Finding {
+                    id: format!("V014-{}", line_num + 1),
+                    detector_id: self.id().to_string(),
+                    title: "Oracle price consumed without validation".to_string(),
+                    description: "Oracle price is read without checking staleness or validity.".to_string(),
+                    severity: self.severity(),
+                    file_path: context.file_path.clone(),
+                    line: line_num + 1,
+                    location: format!("{}:{}", context.file_path, line_num + 1),
+                    code_snippet: Some(line.trim().to_string()),
+                    remediation: self.remediation().to_string(),
+                    cwe: self.cwe().map(|s| s.to_string()),
+                    confidence: 0.80, // Higher confidence now
+                });
             }
         }
         findings
@@ -156,5 +179,57 @@ impl VulnerabilityDetector for OracleRisksDetector {
 impl Default for OracleRisksDetector {
     fn default() -> Self { 
         Self::new() 
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_skips_imports() {
+        let detector = OracleRisksDetector::new();
+        let context = AnalysisContext {
+            file_path: "test.rs".to_string(),
+            source_code: "use pyth_sdk::Price;\nuse crate::oracle;".to_string(),
+        };
+        let findings = detector.detect(&context);
+        assert!(findings.is_empty(), "Should not flag imports");
+    }
+
+    #[test]
+    fn test_skips_struct_fields() {
+        let detector = OracleRisksDetector::new();
+        let context = AnalysisContext {
+            file_path: "test.rs".to_string(),
+            source_code: "pub struct MyState {\n    pub oracle: Pubkey,\n}".to_string(),
+        };
+        let findings = detector.detect(&context);
+        assert!(findings.is_empty(), "Should not flag struct fields");
+    }
+
+    #[test]
+    fn test_flags_actual_oracle_call() {
+        let detector = OracleRisksDetector::new();
+        let context = AnalysisContext {
+            file_path: "test.rs".to_string(),
+            source_code: "let price = oracle.get_price()?;".to_string(),
+        };
+        let findings = detector.detect(&context);
+        assert_eq!(findings.len(), 1, "Should flag actual oracle call");
+    }
+
+    #[test]
+    fn test_skips_validated_oracle() {
+        let detector = OracleRisksDetector::new();
+        let context = AnalysisContext {
+            file_path: "test.rs".to_string(),
+            source_code: r#"
+let price = oracle.get_price()?;
+require!(price > 0, ErrorCode::InvalidPrice);
+"#.to_string(),
+        };
+        let findings = detector.detect(&context);
+        assert!(findings.is_empty(), "Should not flag validated oracle");
     }
 }

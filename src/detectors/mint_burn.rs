@@ -29,6 +29,7 @@
 //! - CWE-190: Integer Overflow or Wraparound
 
 use crate::detectors::VulnerabilityDetector;
+use crate::detectors::utils::should_skip_line;
 use crate::parser::AnalysisContext;
 use crate::report::{Finding, Severity};
 use regex::Regex;
@@ -121,6 +122,11 @@ impl VulnerabilityDetector for MintBurnDetector {
         ];
 
         for (line_num, line) in source.lines().enumerate() {
+            // Skip non-code contexts (comments, imports, struct fields)
+            if should_skip_line(line) {
+                continue;
+            }
+            
             for pattern in &patterns {
                 if pattern.is_match(line) && !self.has_checked_math(source, line_num) {
                     findings.push(Finding {

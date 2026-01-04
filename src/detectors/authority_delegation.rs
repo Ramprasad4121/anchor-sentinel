@@ -30,6 +30,7 @@
 //! - CWE-269: Improper Privilege Management
 
 use crate::detectors::VulnerabilityDetector;
+use crate::detectors::utils::should_skip_line;
 use crate::parser::AnalysisContext;
 use crate::report::{Finding, Severity};
 use regex::Regex;
@@ -107,6 +108,11 @@ impl VulnerabilityDetector for AuthorityDelegationDetector {
         ];
 
         for (line_num, line) in source.lines().enumerate() {
+            // Skip non-code contexts (comments, imports, struct fields)
+            if should_skip_line(line) {
+                continue;
+            }
+            
             for pattern in &patterns {
                 if pattern.is_match(line) && !self.has_revocation_path(source, line_num) {
                     findings.push(Finding {
