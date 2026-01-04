@@ -187,49 +187,32 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_skips_imports() {
+    fn test_is_actual_oracle_call() {
         let detector = OracleRisksDetector::new();
-        let context = AnalysisContext {
-            file_path: "test.rs".to_string(),
-            source_code: "use pyth_sdk::Price;\nuse crate::oracle;".to_string(),
-        };
-        let findings = detector.detect(&context);
-        assert!(findings.is_empty(), "Should not flag imports");
+        
+        // Should match actual oracle calls
+        assert!(detector.is_actual_oracle_call("let price = oracle.get_price()?;"));
+        assert!(detector.is_actual_oracle_call("let p = price_feed.get_current_price()?;"));
+        assert!(detector.is_actual_oracle_call("aggregator.get_result()?"));
+        
+        // Should NOT match imports or struct fields
+        assert!(!detector.is_actual_oracle_call("use pyth_sdk::Price;"));
+        assert!(!detector.is_actual_oracle_call("pub oracle: Pubkey,"));
     }
 
     #[test]
-    fn test_skips_struct_fields() {
+    fn test_has_staleness_check() {
         let detector = OracleRisksDetector::new();
-        let context = AnalysisContext {
-            file_path: "test.rs".to_string(),
-            source_code: "pub struct MyState {\n    pub oracle: Pubkey,\n}".to_string(),
-        };
-        let findings = detector.detect(&context);
-        assert!(findings.is_empty(), "Should not flag struct fields");
-    }
-
-    #[test]
-    fn test_flags_actual_oracle_call() {
-        let detector = OracleRisksDetector::new();
-        let context = AnalysisContext {
-            file_path: "test.rs".to_string(),
-            source_code: "let price = oracle.get_price()?;".to_string(),
-        };
-        let findings = detector.detect(&context);
-        assert_eq!(findings.len(), 1, "Should flag actual oracle call");
-    }
-
-    #[test]
-    fn test_skips_validated_oracle() {
-        let detector = OracleRisksDetector::new();
-        let context = AnalysisContext {
-            file_path: "test.rs".to_string(),
-            source_code: r#"
+        
+        // Source with validation
+        let validated = r#"
 let price = oracle.get_price()?;
 require!(price > 0, ErrorCode::InvalidPrice);
-"#.to_string(),
-        };
-        let findings = detector.detect(&context);
-        assert!(findings.is_empty(), "Should not flag validated oracle");
+"#;
+        assert!(detector.has_staleness_check(validated, 0));
+        
+        // Source without validation
+        let unvalidated = "let price = oracle.get_price()?;";
+        assert!(!detector.has_staleness_check(unvalidated, 0));
     }
 }

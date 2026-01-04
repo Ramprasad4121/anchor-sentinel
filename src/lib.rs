@@ -28,6 +28,7 @@
 //! let report = Report::new(findings, path);
 //! ```
 
+pub mod analysis;
 pub mod cli;
 pub mod detectors;
 pub mod parser;

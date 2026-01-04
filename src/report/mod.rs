@@ -226,6 +226,7 @@ mod tests {
             code_snippet: None,
             remediation: "Fix it".to_string(),
             cwe: Some("CWE-123".to_string()),
+            confidence: 0.9,
         }];
 
         let report = Report::new(findings, PathBuf::from("./test"));

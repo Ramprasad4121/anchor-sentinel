@@ -223,6 +223,7 @@ mod tests {
             code_snippet: Some("pub field: AccountInfo".to_string()),
             remediation: "Fix it".to_string(),
             cwe: Some("CWE-862".to_string()),
+            confidence: 0.9,
         }];
 
         let report = Report::new(findings, PathBuf::from("./test"));

@@ -44,6 +44,7 @@ mod lamports_rounding;
 mod unchecked_init;
 mod unsafe_cpi;
 mod token_2022;
+mod tainted_flow;
 pub mod utils;
 
 pub use integer_overflow::IntegerOverflowDetector;
@@ -67,6 +68,7 @@ pub use lamports_rounding::LamportsRoundingDetector;
 pub use unchecked_init::UncheckedInitDetector;
 pub use unsafe_cpi::UnsafeCpiDetector;
 pub use token_2022::Token2022Detector;
+pub use tainted_flow::TaintedFlowDetector;
 
 use crate::parser::AnalysisContext;
 use crate::report::{Finding, Severity};
@@ -182,6 +184,8 @@ impl DetectorRegistry {
             // Phase 4: V017, V019
             Box::new(UpgradeGapsDetector::new()),
             Box::new(LoopOverflowDetector::new()),
+            // Advanced Analysis: V023 (Taint Analysis)
+            Box::new(TaintedFlowDetector::new()),
         ];
 
         Self { detectors }

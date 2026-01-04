@@ -916,9 +916,10 @@ mod tests {
             code_snippet: None,
             remediation: "Add Signer type".to_string(),
             cwe: None,
+            confidence: 0.9,
         }];
 
-        let files = generator.generate_all(&findings, temp_dir.path()).unwrap();
+        let files = generator.generate_all(&findings, temp_dir.path(), None).unwrap();
 
         assert!(!files.is_empty());
         assert!(files.iter().any(|f| f.file_name().unwrap() == "poc_v001.ts"));
