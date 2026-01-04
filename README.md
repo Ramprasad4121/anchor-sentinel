@@ -19,6 +19,8 @@
  Anchor-Sentinel is a static analysis framework for Solana & Anchor programs written in Rust. It runs a suite of vulnerability detectors to identify critical security flaws, prints detailed audit reports, and—unlike traditional tools—automatically generates executable Proof-of-Concept (POC) exploits. Anchor-Sentinel enables developers to find vulnerabilities, understand attack vectors through generated code, and verify fixes instantly.
 </p>
 
+> [!IMPORTANT]  
+> **DeNova Hackathon Submission**: This branch (`denova-hackathon`) contains the frozen code submission for the DeNova Hackathon (Deadline: 4 PM 04/01/2026). For the latest development version, please refer to the `main` branch.
 ---
 
 ## Installation
