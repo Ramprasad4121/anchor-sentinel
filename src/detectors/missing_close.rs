@@ -1,11 +1,46 @@
 //! # V013 - Missing Close Account Detector
 //!
-//! Detects init without paired close instruction, enabling rent theft.
+//! @title Account Lifecycle Completion Detector
+//! @author Ramprasad
+//!
+//! Detects account initialization without paired close instruction,
+//! which can lead to rent theft or stuck lamports.
+//!
+//! ## Vulnerability Pattern
+//!
+//! ```rust,ignore
+//! // VULNERABLE: Init without close
+//! #[derive(Accounts)]
+//! pub struct Initialize<'info> {
+//!     #[account(init, payer = user, space = 8 + 32)]
+//!     pub state: Account<'info, State>,
+//! }
+//! // No close instruction exists in the program!
+//! ```
+//!
+//! ## Secure Pattern
+//!
+//! ```rust,ignore
+//! // SECURE: Has close instruction
+//! #[derive(Accounts)]
+//! pub struct CloseState<'info> {
+//!     #[account(mut, close = destination)]
+//!     pub state: Account<'info, State>,
+//!     /// CHECK: Destination for rent
+//!     #[account(mut)]
+//!     pub destination: AccountInfo<'info>,
+//! }
+//! ```
+//!
+//! ## CWE Reference
+//!
+//! - CWE-404: Improper Resource Shutdown or Release
 
 use crate::detectors::VulnerabilityDetector;
 use crate::parser::AnalysisContext;
 use crate::report::{Finding, Severity};
 
+/// Detector for missing close account instructions.
 pub struct MissingCloseDetector;
 
 impl MissingCloseDetector {
@@ -29,12 +64,10 @@ impl VulnerabilityDetector for MissingCloseDetector {
         let source = &context.source_code;
         let lower = source.to_lowercase();
 
-        // Check if there's init without close
         let has_init = lower.contains("#[account(init") || lower.contains("init_if_needed");
         let has_close = lower.contains("close =") || lower.contains("close_account");
 
         if has_init && !has_close {
-            // Find the init line for reporting
             for (line_num, line) in source.lines().enumerate() {
                 if line.to_lowercase().contains("#[account(init") {
                     findings.push(Finding {
@@ -51,7 +84,7 @@ impl VulnerabilityDetector for MissingCloseDetector {
                         cwe: self.cwe().map(|s| s.to_string()),
                         confidence: 0.60,
                     });
-                    break; // One finding per file
+                    break;
                 }
             }
         }

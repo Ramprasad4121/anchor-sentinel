@@ -1,12 +1,38 @@
 //! # V022 - Lamports Rounding Errors Detector
 //!
-//! Detects SOL transfers that may lose precision.
+//! @title SOL Precision Loss Detector
+//! @author Ramprasad
+//!
+//! Detects SOL transfers that may lose precision due to rounding
+//! or improper arithmetic on lamport values.
+//!
+//! ## Vulnerability Pattern
+//!
+//! ```rust,ignore
+//! // VULNERABLE: Potential precision loss
+//! **vault.to_account_info().try_borrow_mut_lamports()? -= amount;
+//! // amount might have dust that gets lost
+//! ```
+//!
+//! ## Secure Pattern
+//!
+//! ```rust,ignore
+//! // SECURE: Using safe arithmetic
+//! let current = vault.to_account_info().lamports();
+//! let new_balance = current.saturating_sub(amount);
+//! **vault.to_account_info().try_borrow_mut_lamports()? = new_balance;
+//! ```
+//!
+//! ## CWE Reference
+//!
+//! - CWE-682: Incorrect Calculation
 
 use crate::detectors::VulnerabilityDetector;
 use crate::parser::AnalysisContext;
 use crate::report::{Finding, Severity};
 use regex::Regex;
 
+/// Detector for lamports rounding error vulnerabilities.
 pub struct LamportsRoundingDetector;
 
 impl LamportsRoundingDetector {

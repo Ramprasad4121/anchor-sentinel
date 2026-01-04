@@ -1,11 +1,20 @@
 //! # V017 - Cross-Program Upgradeability Gaps Detector
 //!
-//! Detects upgrades without version checks causing silent reverts.
+//! @title Upgradeable Program Version Detector
+//! @author Ramprasad
+//!
+//! Detects CPIs to upgradeable programs without version validation,
+//! which can cause silent failures after upgrades.
+//!
+//! ## CWE Reference
+//!
+//! - CWE-440: Expected Behavior Violation
 
 use crate::detectors::VulnerabilityDetector;
 use crate::parser::AnalysisContext;
 use crate::report::{Finding, Severity};
 
+/// Detector for cross-program upgradeability gaps.
 pub struct UpgradeGapsDetector;
 
 impl UpgradeGapsDetector {

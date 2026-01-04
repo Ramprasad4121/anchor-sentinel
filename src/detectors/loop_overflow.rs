@@ -1,12 +1,41 @@
 //! # V019 - Loop Iteration Overflows Detector
 //!
-//! Detects unbounded loops on dynamic arrays without length limits.
+//! @title Unbounded Loop Detector
+//! @author Ramprasad
+//!
+//! Detects unbounded loops on dynamic arrays without length limits,
+//! which can cause DoS via compute unit exhaustion.
+//!
+//! ## Vulnerability Pattern
+//!
+//! ```rust,ignore
+//! // VULNERABLE: Unbounded iteration
+//! for account in remaining_accounts.iter() {
+//!     process_account(account)?;  // Could exhaust compute units!
+//! }
+//! ```
+//!
+//! ## Secure Pattern
+//!
+//! ```rust,ignore
+//! // SECURE: Bounded iteration
+//! const MAX_ACCOUNTS: usize = 10;
+//! require!(remaining_accounts.len() <= MAX_ACCOUNTS, ErrorCode::TooManyAccounts);
+//! for account in remaining_accounts.iter().take(MAX_ACCOUNTS) {
+//!     process_account(account)?;
+//! }
+//! ```
+//!
+//! ## CWE Reference
+//!
+//! - CWE-834: Excessive Iteration
 
 use crate::detectors::VulnerabilityDetector;
 use crate::parser::AnalysisContext;
 use crate::report::{Finding, Severity};
 use regex::Regex;
 
+/// Detector for loop iteration overflow vulnerabilities.
 pub struct LoopOverflowDetector;
 
 impl LoopOverflowDetector {
@@ -48,7 +77,6 @@ impl VulnerabilityDetector for LoopOverflowDetector {
     fn detect(&self, context: &AnalysisContext) -> Vec<Finding> {
         let mut findings = Vec::new();
         let source = &context.source_code;
-
         let pattern = Regex::new(r"for\s+\w+\s+in\s+\w+\.iter\(\)").unwrap();
 
         for (line_num, line) in source.lines().enumerate() {

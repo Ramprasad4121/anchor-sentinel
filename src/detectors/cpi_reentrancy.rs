@@ -1,17 +1,76 @@
 //! # V009 - Reentrancy via CPI Detector
 //!
-//! Detects potential reentrancy through CPI chains without state guards.
+//! @title Cross-Program Invocation Reentrancy Detector
+//! @author Ramprasad
+//!
+//! Detects potential reentrancy vulnerabilities through CPI chains without
+//! proper state guards, which can enable recursive drain attacks.
+//!
+//! ## Vulnerability Pattern
+//!
+//! ```rust,ignore
+//! // VULNERABLE: No reentrancy guard
+//! pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
+//!     // External CPI call without state lock
+//!     token::transfer(ctx.accounts.transfer_ctx(), amount)?;
+//!     // State updated AFTER external call - classic reentrancy!
+//!     ctx.accounts.vault.balance -= amount;
+//!     Ok(())
+//! }
+//! ```
+//!
+//! ## Secure Pattern
+//!
+//! ```rust,ignore
+//! // SECURE: State locked before CPI
+//! pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
+//!     require!(!ctx.accounts.state.is_processing, ErrorCode::ReentrancyGuard);
+//!     ctx.accounts.state.is_processing = true;
+//!     
+//!     // Update state BEFORE external call (Checks-Effects-Interactions)
+//!     ctx.accounts.vault.balance -= amount;
+//!     
+//!     token::transfer(ctx.accounts.transfer_ctx(), amount)?;
+//!     
+//!     ctx.accounts.state.is_processing = false;
+//!     Ok(())
+//! }
+//! ```
+//!
+//! ## CWE Reference
+//!
+//! - CWE-841: Improper Enforcement of Behavioral Workflow
 
 use crate::detectors::VulnerabilityDetector;
 use crate::parser::AnalysisContext;
 use crate::report::{Finding, Severity};
 use regex::Regex;
 
+/// Detector for CPI reentrancy vulnerabilities.
+///
+/// Identifies cross-program invocations (`invoke`, `invoke_signed`, `CpiContext`)
+/// that lack reentrancy protection, which could enable recursive exploit patterns.
 pub struct CpiReentrancyDetector;
 
 impl CpiReentrancyDetector {
-    pub fn new() -> Self { Self }
+    /// Creates a new CPI reentrancy detector instance.
+    pub fn new() -> Self { 
+        Self 
+    }
 
+    /// Checks if reentrancy protection exists before a CPI call.
+    ///
+    /// Searches the 15 lines preceding the CPI for evidence of reentrancy
+    /// guards such as locks, processing flags, or mutex patterns.
+    ///
+    /// # Arguments
+    ///
+    /// * `source` - The complete source code to analyze
+    /// * `cpi_line` - The line number where CPI was found
+    ///
+    /// # Returns
+    ///
+    /// `true` if reentrancy protection is present, `false` otherwise.
     fn has_reentrancy_guard(&self, source: &str, cpi_line: usize) -> bool {
         let lines: Vec<&str> = source.lines().collect();
         let start = cpi_line.saturating_sub(15);
@@ -36,19 +95,38 @@ impl CpiReentrancyDetector {
 
 impl VulnerabilityDetector for CpiReentrancyDetector {
     fn id(&self) -> &'static str { "V009" }
+    
     fn name(&self) -> &'static str { "Reentrancy via CPI" }
+    
     fn description(&self) -> &'static str {
         "Detects CPI calls without reentrancy protection, enabling recursive drain attacks."
     }
+    
     fn severity(&self) -> Severity { Severity::Critical }
+    
     fn cwe(&self) -> Option<&'static str> { Some("CWE-841") }
+    
     fn remediation(&self) -> &'static str {
         "Add reentrancy guard before CPI:\n\
-         ctx.accounts.state.is_processing = true;\n\
-         // ... CPI call ...\n\
-         ctx.accounts.state.is_processing = false;"
+         1. Check lock: require!(!state.is_processing)\n\
+         2. Set lock: state.is_processing = true\n\
+         3. Update state BEFORE CPI (Checks-Effects-Interactions)\n\
+         4. Make CPI call\n\
+         5. Release lock: state.is_processing = false"
     }
 
+    /// Runs the CPI reentrancy detector.
+    ///
+    /// Scans for `invoke`, `invoke_signed`, and `CpiContext` patterns and
+    /// verifies that reentrancy guards are present before the call.
+    ///
+    /// # Arguments
+    ///
+    /// * `context` - The analysis context containing parsed source code
+    ///
+    /// # Returns
+    ///
+    /// A vector of findings for each CPI without reentrancy protection.
     fn detect(&self, context: &AnalysisContext) -> Vec<Finding> {
         let mut findings = Vec::new();
         let source = &context.source_code;
@@ -85,5 +163,7 @@ impl VulnerabilityDetector for CpiReentrancyDetector {
 }
 
 impl Default for CpiReentrancyDetector {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self { 
+        Self::new() 
+    }
 }

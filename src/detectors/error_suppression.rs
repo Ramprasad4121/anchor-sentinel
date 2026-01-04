@@ -1,12 +1,38 @@
 //! # V018 - Error Handling Suppression Detector
 //!
-//! Detects ? operator on CPIs without custom error handling.
+//! @title CPI Error Context Detector
+//! @author Ramprasad
+//!
+//! Detects `?` operator on CPIs without custom error mapping,
+//! which can hide failures and make debugging difficult.
+//!
+//! ## Vulnerability Pattern
+//!
+//! ```rust,ignore
+//! // Less Ideal: Error context lost
+//! invoke(&ix, &accounts)?;  // Generic ProgramError
+//! ```
+//!
+//! ## Secure Pattern
+//!
+//! ```rust,ignore
+//! // Better: Custom error with context
+//! invoke(&ix, &accounts).map_err(|e| {
+//!     msg!("CPI failed: {:?}", e);
+//!     MyError::CpiFailed
+//! })?;
+//! ```
+//!
+//! ## CWE Reference
+//!
+//! - CWE-755: Improper Handling of Exceptional Conditions
 
 use crate::detectors::VulnerabilityDetector;
 use crate::parser::AnalysisContext;
 use crate::report::{Finding, Severity};
 use regex::Regex;
 
+/// Detector for error handling suppression.
 pub struct ErrorSuppressionDetector;
 
 impl ErrorSuppressionDetector {
@@ -28,7 +54,6 @@ impl VulnerabilityDetector for ErrorSuppressionDetector {
     fn detect(&self, context: &AnalysisContext) -> Vec<Finding> {
         let mut findings = Vec::new();
         let source = &context.source_code;
-
         let pattern = Regex::new(r"invoke(_signed)?\s*\([^)]+\)\s*\?").unwrap();
 
         for (line_num, line) in source.lines().enumerate() {

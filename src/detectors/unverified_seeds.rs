@@ -1,39 +1,96 @@
 //! # V021 - Unverified Seeds in Derived Accounts Detector
 //!
-//! Detects PDAs used without full seed re-derivation, enabling collision exploits.
+//! @title PDA Seeds Verification Detector
+//! @author Ramprasad
+//!
+//! Detects PDA accounts used without proper `#[account(seeds=...)]` constraint
+//! verification, which can allow attackers to pass arbitrary accounts.
+//!
+//! ## Vulnerability Pattern
+//!
+//! ```rust,ignore
+//! // VULNERABLE: PDA without seeds constraint
+//! #[derive(Accounts)]
+//! pub struct WithdrawAccounts<'info> {
+//!     #[account(mut)]
+//!     pub vault: Account<'info, Vault>,  // No seeds verification!
+//! }
+//! ```
+//!
+//! ## Secure Pattern
+//!
+//! ```rust,ignore
+//! // SECURE: PDA with seeds constraint
+//! #[derive(Accounts)]
+//! pub struct WithdrawAccounts<'info> {
+//!     #[account(
+//!         mut,
+//!         seeds = [b"vault", user.key().as_ref()],
+//!         bump = vault.bump
+//!     )]
+//!     pub vault: Account<'info, Vault>,
+//! }
+//! ```
+//!
+//! ## CWE Reference
+//!
+//! - CWE-345: Insufficient Verification of Data Authenticity
 
 use crate::detectors::VulnerabilityDetector;
 use crate::parser::AnalysisContext;
 use crate::report::{Finding, Severity};
 
+/// Detector for unverified PDA seeds.
+///
+/// Identifies PDA-like account fields that lack proper `seeds` constraint
+/// verification in Anchor account structs.
 pub struct UnverifiedSeedsDetector;
 
 impl UnverifiedSeedsDetector {
-    pub fn new() -> Self { Self }
+    /// Creates a new unverified seeds detector instance.
+    pub fn new() -> Self { 
+        Self 
+    }
 }
 
 impl VulnerabilityDetector for UnverifiedSeedsDetector {
     fn id(&self) -> &'static str { "V021" }
+    
     fn name(&self) -> &'static str { "Unverified Seeds in Derived Accounts" }
+    
     fn description(&self) -> &'static str {
         "Detects PDA accounts used without #[account(seeds=...)] constraint, risking collisions."
     }
+    
     fn severity(&self) -> Severity { Severity::Critical }
+    
     fn cwe(&self) -> Option<&'static str> { Some("CWE-345") }
+    
     fn remediation(&self) -> &'static str {
-        "Use Anchor's seeds constraint: #[account(seeds = [b\"seed\", user.key().as_ref()], bump)]"
+        "Use Anchor's seeds constraint:\n\
+         #[account(seeds = [b\"prefix\", user.key().as_ref()], bump)]"
     }
 
+    /// Runs the unverified seeds detector.
+    ///
+    /// Scans for PDA-like account names (vault, pda, state, config, etc.)
+    /// in Anchor account structs that lack seeds constraints.
+    ///
+    /// # Arguments
+    ///
+    /// * `context` - The analysis context containing parsed source code
+    ///
+    /// # Returns
+    ///
+    /// A vector of findings for each PDA without seeds verification.
     fn detect(&self, context: &AnalysisContext) -> Vec<Finding> {
         let mut findings = Vec::new();
         let source = &context.source_code;
 
-        // Look for AccountInfo with PDA-like names but no seeds constraint
         let mut in_accounts_struct = false;
         let mut struct_name = String::new();
 
         for (line_num, line) in source.lines().enumerate() {
-            // Track when we're inside a #[derive(Accounts)] struct
             if line.contains("#[derive(Accounts)]") {
                 in_accounts_struct = true;
                 continue;
@@ -46,7 +103,6 @@ impl VulnerabilityDetector for UnverifiedSeedsDetector {
                     }
                 }
 
-                // PDA-like names: vault, pda, state, config, pool, etc.
                 let pda_names = ["pda", "vault", "state", "config", "pool", "escrow", "authority"];
                 
                 for pda_name in &pda_names {
@@ -75,7 +131,6 @@ impl VulnerabilityDetector for UnverifiedSeedsDetector {
                     }
                 }
 
-                // Exit struct on closing brace
                 if line.trim() == "}" {
                     in_accounts_struct = false;
                 }
@@ -86,5 +141,7 @@ impl VulnerabilityDetector for UnverifiedSeedsDetector {
 }
 
 impl Default for UnverifiedSeedsDetector {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self { 
+        Self::new() 
+    }
 }
