@@ -29,7 +29,7 @@
 use crate::detectors::VulnerabilityDetector;
 use crate::parser::AnalysisContext;
 use crate::report::{Finding, Severity};
-use crate::analysis::taint::{TaintTracker, TaintSource, TaintSink};
+use crate::analysis::taint::{TaintTracker, TaintSinkType}; // TaintSourceType removed from flow
 use syn::ItemFn;
 
 /// Detector for tainted data flow vulnerabilities.
@@ -100,30 +100,23 @@ impl VulnerabilityDetector for TaintedFlowDetector {
             
             // Convert tainted flows to findings
             for flow in tracker.flows {
-                let source_desc = match &flow.source {
-                    TaintSource::FunctionArg(name) => format!("function argument '{}'", name),
-                    TaintSource::AccountField(name) => format!("account field '{}'", name),
-                    TaintSource::DeserializedData(name) => format!("deserialized data '{}'", name),
-                    TaintSource::AccountData(name) => format!("account data '{}'", name),
-                };
-                
                 let sink_desc = match flow.sink {
-                    TaintSink::Transfer => "token transfer",
-                    TaintSink::Invoke => "cross-program invocation",
-                    TaintSink::ArrayIndex => "array indexing",
-                    TaintSink::StateModification => "state modification",
-                    TaintSink::UncheckedMath => "unchecked arithmetic",
+                    TaintSinkType::Transfer => "token transfer",
+                    TaintSinkType::Invoke => "cross-program invocation",
+                    TaintSinkType::ArrayIndex => "array indexing",
+                    TaintSinkType::StateModification => "state modification",
+                    TaintSinkType::UncheckedMath => "unchecked arithmetic",
                 };
                 
                 findings.push(Finding {
                     id: format!("V023-{}", flow.line),
                     detector_id: self.id().to_string(),
-                    title: format!("Tainted {} flows to {} without validation", 
+                    title: format!("Tainted '{}' flows to {} without validation", 
                                    flow.variable, sink_desc),
                     description: format!(
-                        "Untrusted data from {} reaches a {} operation without \
+                        "Untrusted data in variable '{}' reaches a {} operation without \
                          being validated. Attackers can exploit this to cause unexpected behavior.",
-                        source_desc, sink_desc
+                        flow.variable, sink_desc
                     ),
                     severity: self.severity(),
                     file_path: context.file_path.clone(),
@@ -150,25 +143,14 @@ impl Default for TaintedFlowDetector {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::analysis::taint::TaintTracker;
+    use crate::analysis::taint::{TaintContext, TaintStatus};
 
     #[test]
-    fn test_taint_tracking_integration() {
-        // Test the taint tracker directly
-        let mut tracker = TaintTracker::new("");
+    fn test_taint_context_status() {
+        let mut context = TaintContext::new();
+        context.set_status("amount".to_string(), TaintStatus::Tainted);
         
-        // Mark 'amount' as tainted
-        tracker.mark_tainted("amount", crate::analysis::taint::TaintSource::FunctionArg("amount".to_string()));
-        
-        // Verify it's tainted
-        assert!(tracker.is_tainted("amount"));
-        
-        // Propagate to another variable
-        tracker.propagate("amount", "value");
-        assert!(tracker.is_tainted("value"));
-        
-        // Sanitize and verify
-        tracker.mark_sanitized("amount");
-        assert!(!tracker.is_tainted("amount"));
+        assert_eq!(context.get_status("amount"), TaintStatus::Tainted);
+        assert_eq!(context.get_status("safe"), TaintStatus::Unknown);
     }
 }

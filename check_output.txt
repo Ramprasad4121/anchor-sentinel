@@ -1,0 +1,45 @@
+    Checking anchor-sentinel v0.1.0 (/Users/ramprasadgoud/Desktop/ETH/Rust/Anchor-Sentinel)
+error[E0432]: unresolved imports `taint::TaintSource`, `taint::TaintSink`, `taint::Sanitizer`
+  --> src/analysis/mod.rs:19:31
+   |
+19 | pub use taint::{TaintTracker, TaintSource, TaintSink, Sanitizer};
+   |                               ^^^^^^^^^^^  ^^^^^^^^^  ^^^^^^^^^ no `Sanitizer` in `analysis::taint`
+   |                               |            |
+   |                               |            no `TaintSink` in `analysis::taint`
+   |                               no `TaintSource` in `analysis::taint`
+
+warning: unused import: `HashSet`
+  --> src/analysis/taint.rs:20:33
+   |
+20 | use std::collections::{HashMap, HashSet};
+   |                                 ^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `Block`
+  --> src/analysis/taint.rs:23:23
+   |
+23 |     Pat, Local, Stmt, Block, ExprIf, ExprMacro, FnArg, PatIdent,
+   |                       ^^^^^
+
+warning: unused import: `std::path::Path`
+  --> src/analysis/context.rs:19:5
+   |
+19 | use std::path::Path;
+   |     ^^^^^^^^^^^^^^^
+
+warning: unused imports: `Fields`, `ItemConst`, `ItemFn`, and `ItemStruct`
+  --> src/analysis/context.rs:95:25
+   |
+95 |         use syn::{Item, ItemStruct, ItemConst, ItemFn, Fields};
+   |                         ^^^^^^^^^^  ^^^^^^^^^  ^^^^^^  ^^^^^^
+
+warning: unused import: `Expr`
+  --> src/analysis/cfg.rs:29:33
+   |
+29 | use syn::{visit::{self, Visit}, Expr, ExprCall, ExprIf, ExprBlock, ExprLoop, ExprForLoop, ExprWhile};
+   |                                 ^^^^
+
+For more information about this error, try `rustc --explain E0432`.
+warning: `anchor-sentinel` (lib) generated 5 warnings
+error: could not compile `anchor-sentinel` (lib) due to 1 previous error; 5 warnings emitted
