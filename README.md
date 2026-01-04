@@ -23,13 +23,17 @@
 
 ## Installation
 
-# Using Cargo 
+### Using Cargo 
+```bash
 cargo install --git https://github.com/Ramprasad4121/anchor-sentinel
+```
 
-# Using Git
+### Using Git
+```bash
 git clone https://github.com/Ramprasad4121/anchor-sentinel
 cd anchor-sentinel
 cargo install --path .
+```
 
 That's it. The tool is now available globally.
 
