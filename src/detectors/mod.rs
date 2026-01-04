@@ -27,6 +27,20 @@ mod integer_overflow;
 mod missing_owner;
 mod missing_signer;
 mod pda_collision;
+mod pda_bump;
+mod unchecked_transfer;
+mod authority_delegation;
+mod mint_burn;
+mod unverified_seeds;
+mod cpi_reentrancy;
+mod oracle_risks;
+mod replay_attack;
+mod rent_bypass;
+mod missing_close;
+mod upgrade_gaps;
+mod error_suppression;
+mod loop_overflow;
+mod lamports_rounding;
 mod unchecked_init;
 mod unsafe_cpi;
 mod token_2022;
@@ -35,6 +49,20 @@ pub use integer_overflow::IntegerOverflowDetector;
 pub use missing_owner::MissingOwnerDetector;
 pub use missing_signer::MissingSignerDetector;
 pub use pda_collision::PdaCollisionDetector;
+pub use pda_bump::PdaBumpDetector;
+pub use unchecked_transfer::UncheckedTransferDetector;
+pub use authority_delegation::AuthorityDelegationDetector;
+pub use mint_burn::MintBurnDetector;
+pub use unverified_seeds::UnverifiedSeedsDetector;
+pub use cpi_reentrancy::CpiReentrancyDetector;
+pub use oracle_risks::OracleRisksDetector;
+pub use replay_attack::ReplayAttackDetector;
+pub use rent_bypass::RentBypassDetector;
+pub use missing_close::MissingCloseDetector;
+pub use upgrade_gaps::UpgradeGapsDetector;
+pub use error_suppression::ErrorSuppressionDetector;
+pub use loop_overflow::LoopOverflowDetector;
+pub use lamports_rounding::LamportsRoundingDetector;
 pub use unchecked_init::UncheckedInitDetector;
 pub use unsafe_cpi::UnsafeCpiDetector;
 pub use token_2022::Token2022Detector;
@@ -127,6 +155,7 @@ impl DetectorRegistry {
     /// V001 through V006.
     pub fn new() -> Self {
         let detectors: Vec<Box<dyn VulnerabilityDetector>> = vec![
+            // Original detectors (V001-V007)
             Box::new(MissingSignerDetector),
             Box::new(MissingOwnerDetector),
             Box::new(IntegerOverflowDetector),
@@ -134,6 +163,24 @@ impl DetectorRegistry {
             Box::new(UncheckedInitDetector),
             Box::new(UnsafeCpiDetector),
             Box::new(Token2022Detector),
+            // Phase 1: V008, V010, V011, V016, V021
+            Box::new(PdaBumpDetector::new()),
+            Box::new(UncheckedTransferDetector::new()),
+            Box::new(AuthorityDelegationDetector::new()),
+            Box::new(MintBurnDetector::new()),
+            Box::new(UnverifiedSeedsDetector::new()),
+            // Phase 2: V009, V014, V015
+            Box::new(CpiReentrancyDetector::new()),
+            Box::new(OracleRisksDetector::new()),
+            Box::new(ReplayAttackDetector::new()),
+            // Phase 3: V012, V013, V018, V022
+            Box::new(RentBypassDetector::new()),
+            Box::new(MissingCloseDetector::new()),
+            Box::new(ErrorSuppressionDetector::new()),
+            Box::new(LamportsRoundingDetector::new()),
+            // Phase 4: V017, V019
+            Box::new(UpgradeGapsDetector::new()),
+            Box::new(LoopOverflowDetector::new()),
         ];
 
         Self { detectors }
@@ -251,6 +298,7 @@ pub fn create_finding(
         code_snippet,
         remediation: detector.remediation().to_string(),
         cwe: detector.cwe().map(|s| s.to_string()),
+        confidence: 1.0,
     }
 }
 

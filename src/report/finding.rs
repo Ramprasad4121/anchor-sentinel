@@ -137,6 +137,15 @@ pub struct Finding {
 
     /// CWE (Common Weakness Enumeration) identifier if applicable.
     pub cwe: Option<String>,
+
+    /// Confidence score (0.0-1.0) for probabilistic detection.
+    /// Higher values indicate higher confidence in the finding.
+    #[serde(default = "default_confidence")]
+    pub confidence: f64,
+}
+
+fn default_confidence() -> f64 {
+    1.0
 }
 
 impl Finding {

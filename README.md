@@ -79,6 +79,20 @@ This generates `.github/workflows/sentinel.yml` for automatic PR scanning.
 | V005 | Reinitialization | Critical |
 | V006 | Unsafe CPI | Critical |
 | V007 | Token-2022 Risks | High |
+| V008 | Missing PDA Bump Check | Critical |
+| V009 | Reentrancy via CPI | Critical |
+| V010 | Unchecked Transfer Amount | High |
+| V011 | Weak Authority Delegation | High |
+| V012 | Rent Exemption Bypass | Medium |
+| V013 | Missing Close Account | Medium |
+| V014 | Oracle Dependency Risks | High |
+| V015 | Sequence Number Mismatch | Critical |
+| V016 | Token Mint/Burn Supply Check | High |
+| V017 | Cross-Program Upgrade Gaps | Medium |
+| V018 | Error Handling Suppression | Low |
+| V019 | Loop Iteration Overflows | High |
+| V021 | Unverified PDA Seeds | Critical |
+| V022 | Lamports Rounding Errors | Medium |
 
 ---
 
