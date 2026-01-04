@@ -23,10 +23,10 @@
 
 ## Installation
 
-# Option 1: Cargo Install (Fastest)
+# Using Cargo 
 cargo install --git https://github.com/Ramprasad4121/anchor-sentinel
 
-# Option 2: Build from Source (Git)
+# Using Git
 git clone https://github.com/Ramprasad4121/anchor-sentinel
 cd anchor-sentinel
 cargo install --path .
