@@ -45,6 +45,9 @@ mod unchecked_init;
 mod unsafe_cpi;
 mod token_2022;
 mod tainted_flow;
+mod account_usage;
+mod arbitrary_cpi;
+mod precision_loss;
 pub mod utils;
 
 pub use integer_overflow::IntegerOverflowDetector;
@@ -69,6 +72,9 @@ pub use unchecked_init::UncheckedInitDetector;
 pub use unsafe_cpi::UnsafeCpiDetector;
 pub use token_2022::Token2022Detector;
 pub use tainted_flow::TaintedFlowDetector;
+pub use account_usage::AccountUsageDetector;
+pub use arbitrary_cpi::ArbitraryCpiDetector;
+pub use precision_loss::PrecisionLossDetector;
 
 use crate::parser::AnalysisContext;
 use crate::report::{Finding, Severity};
@@ -186,6 +192,12 @@ impl DetectorRegistry {
             Box::new(LoopOverflowDetector::new()),
             // Advanced Analysis: V023 (Taint Analysis)
             Box::new(TaintedFlowDetector::new()),
+            // Advanced Analysis: V024 (Used-But-Not-Checked)
+            Box::new(AccountUsageDetector::new()),
+            // Advanced Analysis: V025 (Arbitrary CPI)
+            Box::new(ArbitraryCpiDetector::new()),
+            // Advanced Analysis: V026 (Precision Loss)
+            Box::new(PrecisionLossDetector::new()),
         ];
 
         Self { detectors }
