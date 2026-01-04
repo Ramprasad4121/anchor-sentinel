@@ -161,17 +161,45 @@ impl ProgramContext {
         let name = c.ident.to_string();
         let value_str = quote::quote!(#c.expr).to_string();
         
-        // Try to parse numeric value
-        let value = value_str.trim()
-            .replace("_", "")
-            .parse::<i128>()
-            .ok();
+        // Try to parse numeric value from the expression
+        // Handle cases like "1000", "1_000", "(1000 as u64)", etc.
+        let value = self.extract_numeric_value(&c.expr);
 
         self.constants.insert(name.clone(), ConstantInfo {
             name,
             value,
             value_str,
         });
+    }
+    
+    /// Extracts a numeric value from an expression if possible.
+    fn extract_numeric_value(&self, expr: &syn::Expr) -> Option<i128> {
+        match expr {
+            syn::Expr::Lit(lit) => {
+                if let syn::Lit::Int(int_lit) = &lit.lit {
+                    int_lit.base10_parse::<i128>().ok()
+                } else {
+                    None
+                }
+            }
+            syn::Expr::Cast(cast) => {
+                // Handle (value as Type) patterns
+                self.extract_numeric_value(&cast.expr)
+            }
+            syn::Expr::Paren(paren) => {
+                // Handle (value) patterns
+                self.extract_numeric_value(&paren.expr)
+            }
+            syn::Expr::Unary(unary) => {
+                // Handle negative numbers
+                if matches!(unary.op, syn::UnOp::Neg(_)) {
+                    self.extract_numeric_value(&unary.expr).map(|v| -v)
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        }
     }
 
     fn index_function(&mut self, path: &str, f: &syn::ItemFn) {
@@ -208,6 +236,11 @@ impl ProgramContext {
         if info.context_type.is_some() {
             self.instructions.push(info);
         }
+    }
+
+    /// Resolves a struct by name.
+    pub fn resolve_struct(&self, name: &str) -> Option<&StructInfo> {
+        self.structs.get(name)
     }
 
     /// Gets the type of an account field.

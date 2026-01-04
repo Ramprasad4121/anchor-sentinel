@@ -32,7 +32,6 @@ use crate::detectors::VulnerabilityDetector;
 use crate::detectors::utils::{should_skip_line, is_error_context};
 use crate::parser::AnalysisContext;
 use crate::report::{Finding, Severity};
-use regex::Regex;
 
 /// Detector for oracle dependency risks.
 ///

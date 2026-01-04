@@ -14,6 +14,8 @@
 
 pub mod taint;
 pub mod context;
+pub mod cfg;
 
 pub use taint::{TaintTracker, TaintSource, TaintSink, Sanitizer};
 pub use context::ProgramContext;
+pub use cfg::ScopeTracker;

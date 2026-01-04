@@ -17,7 +17,6 @@ use crate::report::Finding;
 use anyhow::Result;
 use handlebars::Handlebars;
 use serde::Serialize;
-use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 /// Generator for TypeScript proof-of-concept exploit tests.

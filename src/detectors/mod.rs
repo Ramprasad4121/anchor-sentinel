@@ -48,6 +48,7 @@ mod tainted_flow;
 mod account_usage;
 mod arbitrary_cpi;
 mod precision_loss;
+mod scope_validation;
 pub mod utils;
 
 pub use integer_overflow::IntegerOverflowDetector;
@@ -75,6 +76,7 @@ pub use tainted_flow::TaintedFlowDetector;
 pub use account_usage::AccountUsageDetector;
 pub use arbitrary_cpi::ArbitraryCpiDetector;
 pub use precision_loss::PrecisionLossDetector;
+pub use scope_validation::ScopeValidationDetector;
 
 use crate::parser::AnalysisContext;
 use crate::report::{Finding, Severity};
@@ -198,6 +200,8 @@ impl DetectorRegistry {
             Box::new(ArbitraryCpiDetector::new()),
             // Advanced Analysis: V026 (Precision Loss)
             Box::new(PrecisionLossDetector::new()),
+            // Advanced Analysis: V027 (Scope Validation)
+            Box::new(ScopeValidationDetector::new()),
         ];
 
         Self { detectors }

@@ -77,6 +77,9 @@ pub struct AnalysisContext {
 
     /// Program ID extracted from `declare_id!("...")`.
     pub program_id: Option<String>,
+
+    /// Global program context for cross-file analysis.
+    pub program_context: Option<std::sync::Arc<crate::analysis::ProgramContext>>,
 }
 
 impl AnalysisContext {
@@ -121,6 +124,7 @@ impl AnalysisContext {
             error_codes,
             program_name,
             program_id,
+            program_context: None,
         })
     }
 
