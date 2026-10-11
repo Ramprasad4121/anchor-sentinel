@@ -35,7 +35,8 @@ const BANNER: &str = r#"
 fn main() -> Result<()> {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
 
-    println!("{}", BANNER.cyan().bold());
+    // Banner goes to stderr so machine-readable output on stdout stays clean.
+    eprintln!("{}", BANNER.cyan().bold());
 
     let cli = Cli::parse();
 
@@ -177,8 +178,11 @@ fn run_scan(
     use anchor_sentinel::parser::parse_anchor_files;
     use anchor_sentinel::poc_generator::PocGenerator;
 
+    // json and github output must be parseable from stdout, so status lines
+    // go to stderr for those formats.
+    let machine_output = matches!(format.as_str(), "json" | "github");
 
-    println!(
+    eprintln!(
         "{} {}",
         "[*] Scanning:".green().bold(),
         path.display().to_string().yellow()
@@ -248,13 +252,16 @@ fn run_scan(
                     _ => "notice",
                 };
                 
+                // GitHub workflow commands need %, CR and LF escaped.
+                let esc = |v: &str| v.replace('%', "%25").replace('\r', "%0D").replace('\n', "%0A");
+                let esc_prop = |v: &str| esc(v).replace(':', "%3A").replace(',', "%2C");
                 println!(
                     "::{} file={},line={},title={}::{}",
                     level,
-                    finding.file_path,
-                    finding.line,
-                    finding.title,
-                    finding.description
+                    esc_prop(&finding.file_path),
+                    finding.line.max(1),
+                    esc_prop(&format!("[{}] {}", finding.detector_id, finding.title)),
+                    esc(&finding.description)
                 );
             }
         }
@@ -270,14 +277,18 @@ fn run_scan(
         let generator = PocGenerator::new();
         let generated_files = generator.generate_all(&report.findings, &poc_output, Some(&path))?;
 
-        println!("\n{}", "[+] Generated POC Exploit Tests:".magenta().bold());
+        eprintln!("\n{}", "[+] Generated POC Exploit Tests:".magenta().bold());
         for file in generated_files {
-            println!("    -> {}", file.display().to_string().yellow());
+            eprintln!("    -> {}", file.display().to_string().yellow());
         }
     }
 
-    println!("\n{}", "=".repeat(60).cyan());
-    report.print_summary();
+    if machine_output {
+        eprintln!("[*] Total: {} issue(s) found", report.findings.len());
+    } else {
+        println!("\n{}", "=".repeat(60).cyan());
+        report.print_summary();
+    }
 
     Ok(())
 }
