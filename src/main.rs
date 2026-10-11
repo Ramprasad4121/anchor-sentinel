@@ -394,24 +394,26 @@ fn run_diff(old_path: PathBuf, new_path: PathBuf) -> Result<()> {
     let new_findings = perform_scan(&new_abs, true)?;
 
     // Compare findings
-    // We use a simplified key for comparison: DetectorID + RelativePath + LineNumber
-    // Note: LineNumber is fragile but simple for now. 
-    // Ideally use surrounding context hash.
     
-    let get_key = |f: &Finding, base_path: &PathBuf| -> String {
-        let relative = pathdiff::diff_paths(&PathBuf::from(&f.file_path), base_path).unwrap_or(PathBuf::from(&f.file_path));
-        format!("{}:{}:{}", f.detector_id, relative.display(), f.line)
+    // Key on detector + relative path + title (not line number), so adding
+    // or removing lines above a finding does not make it look new. Repeated
+    // identical findings are numbered in order.
+    let build_map = |findings: &Vec<Finding>, base_path: &PathBuf| {
+        let mut seen: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+        let mut map = std::collections::HashMap::new();
+        for f in findings {
+            let relative = pathdiff::diff_paths(&PathBuf::from(&f.file_path), base_path)
+                .unwrap_or(PathBuf::from(&f.file_path));
+            let base = format!("{}:{}:{}", f.detector_id, relative.display(), f.title);
+            let n = seen.entry(base.clone()).or_insert(0);
+            *n += 1;
+            map.insert(format!("{}#{}", base, n), f.clone());
+        }
+        map
     };
 
-    let mut old_map = std::collections::HashMap::new();
-    for f in &old_findings {
-        old_map.insert(get_key(f, &old_abs), f);
-    }
-
-    let mut new_map = std::collections::HashMap::new();
-    for f in &new_findings {
-        new_map.insert(get_key(f, &new_abs), f);
-    }
+    let old_map = build_map(&old_findings, &old_abs);
+    let new_map = build_map(&new_findings, &new_abs);
 
     let mut new_risks = Vec::new();
     let mut fixed_issues = Vec::new();
