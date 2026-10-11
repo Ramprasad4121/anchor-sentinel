@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.1 (11 Oct 2026)
+
+### Fixed
+- `diff` matched findings by line number, so adding a few lines above a finding showed every finding as both new and fixed. It now matches by detector, file and title.
+- V025 accepts a manual program ID comparison (for example `if ctx.accounts.token_program.key != &spl_token::ID`) before the CPI, like V006.
+
 ## v0.2.0 (11 Oct 2026)
 
 Accuracy, output and packaging release. Work done 11 Oct 2026.

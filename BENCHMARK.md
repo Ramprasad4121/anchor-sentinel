@@ -5,7 +5,7 @@
 This is a small, honest benchmark. It shows what Anchor-Sentinel catches today and what it misses.
 
 - Repo commit tested: `24555d0` (sealevel-attacks main, depth 1)
-- Anchor-Sentinel: v0.2.0
+- Anchor-Sentinel: v0.2.0 (v0.2.1 gives identical results)
 - Date: 11 Oct 2026
 - Reproduce: `benchmarks/sealevel-attacks.sh path/to/anchor-sentinel`
 
