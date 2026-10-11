@@ -137,7 +137,10 @@ impl PdaCollisionDetector {
         let mut issues = Vec::new();
 
         // Check for dynamic data
+        // Seeds come from token streams ("user . key () . as_ref ()"),
+        // so strip whitespace before matching.
         let has_dynamic = seeds.iter().any(|s| {
+            let s: String = s.chars().filter(|c| !c.is_whitespace()).collect();
             s.contains(".key()")
                 || s.contains(".as_ref()")
                 || s.contains("to_le_bytes")
