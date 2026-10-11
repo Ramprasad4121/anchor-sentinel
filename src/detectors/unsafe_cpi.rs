@@ -65,6 +65,16 @@ impl VulnerabilityDetector for UnsafeCpiDetector {
 
         // Detect raw invoke calls from instruction handlers
         for handler in &context.instructions {
+            // A handler that compares the program account to a hardcoded ID
+            // before invoking is the manual fix, so skip it.
+            let body = super::utils::source_range(
+                &context.source_code,
+                handler.start_line,
+                handler.end_line,
+            );
+            if super::utils::has_program_id_check(&body) {
+                continue;
+            }
             for cpi in &handler.cpi_calls {
                 if !cpi.is_program_hardcoded {
                     let finding = create_finding(
@@ -124,7 +134,21 @@ impl UnsafeCpiDetector {
                     || line.contains("TOKEN_PROGRAM_ID")
                     || line.contains("SYSTEM_PROGRAM_ID");
 
-                if !is_safe {
+                let enclosing = context
+                    .instructions
+                    .iter()
+                    .find(|h| h.start_line <= line_num && line_num <= h.end_line);
+                let validated = enclosing
+                    .map(|h| {
+                        super::utils::has_program_id_check(&super::utils::source_range(
+                            &context.source_code,
+                            h.start_line,
+                            h.end_line,
+                        ))
+                    })
+                    .unwrap_or(false);
+
+                if !is_safe && !validated {
                     let pattern_type = if has_solana_invoke {
                         "solana_program::program::invoke"
                     } else if line.contains("invoke_signed") {

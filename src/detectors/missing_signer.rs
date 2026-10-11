@@ -66,7 +66,9 @@ impl VulnerabilityDetector for MissingSignerDetector {
         for account_struct in &context.accounts {
             for field in &account_struct.fields {
                 if self.is_potential_authority(field) && !field.is_signer {
-                    if !self.has_external_signer_check(context, &field.name) {
+                    if !self.has_external_signer_check(context, &field.name)
+                        && !super::utils::has_manual_signer_check(&context.source_code, &field.name)
+                    {
                         let finding = create_finding(
                             self,
                             context,

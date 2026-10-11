@@ -234,3 +234,113 @@ pub struct MyAccounts<'info> {
         assert!(is_pda_account(source, 4));
     }
 }
+
+/// Removes all whitespace and line comments so manual checks can be matched
+/// regardless of formatting.
+fn normalize_code(source: &str) -> String {
+    source
+        .lines()
+        .map(|l| match l.find("//") {
+            Some(i) => &l[..i],
+            None => l,
+        })
+        .collect::<String>()
+        .chars()
+        .filter(|c| !c.is_whitespace())
+        .collect()
+}
+
+/// Returns true if handler code checks `is_signer` on the named account,
+/// e.g. `if !ctx.accounts.authority.is_signer { return Err(..) }`.
+pub fn has_manual_signer_check(source: &str, field_name: &str) -> bool {
+    let code = normalize_code(source);
+    code.contains(&format!("accounts.{}.is_signer", field_name))
+        || code.contains(&format!("!{}.is_signer", field_name))
+}
+
+/// Returns true if handler code compares the owner of the named account,
+/// e.g. `if ctx.accounts.token.owner != &spl_token::ID { .. }`.
+/// Only `ctx.accounts.<name>.owner` (the AccountInfo owner) counts, not a
+/// deserialized struct field that happens to be called `owner`.
+pub fn has_manual_owner_check(source: &str, field_name: &str) -> bool {
+    let code = normalize_code(source);
+    let needle = format!("accounts.{}.owner", field_name);
+    let mut rest = code.as_str();
+    while let Some(i) = rest.find(&needle) {
+        let after = &rest[i + needle.len()..];
+        let before = &rest[..i];
+        if after.starts_with("!=")
+            || after.starts_with("==")
+            || before.ends_with("!=ctx.")
+            || before.ends_with("==ctx.")
+            || before.ends_with("!=&ctx.")
+            || before.ends_with("==&ctx.")
+        {
+            return true;
+        }
+        rest = after;
+    }
+    code.contains(&format!("require_keys_eq!(*ctx.accounts.{}.owner", field_name))
+        || code.contains(&format!("require_keys_eq!(ctx.accounts.{}.owner", field_name))
+}
+
+/// Returns true if the code compares a `ctx.accounts.<x>.key` against a
+/// hardcoded program ID (`spl_token::ID`, `system_program::ID`, `id()`),
+/// which is the manual fix for arbitrary CPI.
+pub fn has_program_id_check(source: &str) -> bool {
+    let code = normalize_code(source);
+    let id_then_key = regex::Regex::new(
+        r"(::ID|::id\(\))(!=|==)\*?&?ctx\.accounts\.\w+\.key",
+    )
+    .unwrap();
+    let key_then_id = regex::Regex::new(
+        r"ctx\.accounts\.\w+\.key(\(\))?(!=|==)\*?&?[\w:]*(::ID|::id\(\))",
+    )
+    .unwrap();
+    id_then_key.is_match(&code)
+        || key_then_id.is_match(&code)
+        || code.contains("require_keys_eq!(ctx.accounts.")
+        || code.contains("require_keys_eq!(*ctx.accounts.")
+}
+
+/// Returns the source text between two 1-indexed lines (inclusive).
+pub fn source_range(source: &str, start: usize, end: usize) -> String {
+    if start == 0 || end < start {
+        return source.to_string();
+    }
+    source
+        .lines()
+        .skip(start - 1)
+        .take(end - start + 1)
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+#[cfg(test)]
+mod manual_check_tests {
+    use super::*;
+
+    #[test]
+    fn signer_check_detected() {
+        let src = "if !ctx.accounts.authority.is_signer {\n return Err(e); }";
+        assert!(has_manual_signer_check(src, "authority"));
+        assert!(!has_manual_signer_check(src, "admin"));
+    }
+
+    #[test]
+    fn owner_check_ignores_unpacked_struct_field() {
+        // `token.owner` here is the SPL token owner field, not AccountInfo owner.
+        let insecure = "if ctx.accounts.authority.key != &token.owner { return Err(e); }";
+        assert!(!has_manual_owner_check(insecure, "token"));
+        let secure = "if ctx.accounts.token.owner != &spl_token::ID { return Err(e); }";
+        assert!(has_manual_owner_check(secure, "token"));
+    }
+
+    #[test]
+    fn program_id_check_detected() {
+        assert!(has_program_id_check(
+            "if &spl_token::ID != ctx.accounts.token_program.key { return Err(e); }"
+        ));
+        assert!(!has_program_id_check("invoke(&ix, &accounts)?;"));
+    }
+}

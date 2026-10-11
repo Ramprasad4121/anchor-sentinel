@@ -65,7 +65,10 @@ impl VulnerabilityDetector for MissingOwnerDetector {
 
         for account_struct in &context.accounts {
             for field in &account_struct.fields {
-                if self.needs_owner_check(field) && !self.has_owner_check(field) {
+                if self.needs_owner_check(field)
+                    && !self.has_owner_check(field)
+                    && !super::utils::has_manual_owner_check(&context.source_code, &field.name)
+                {
                     let finding = create_finding(
                         self,
                         context,
