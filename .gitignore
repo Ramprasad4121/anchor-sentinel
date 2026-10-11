@@ -1,0 +1,13 @@
+# Build output
+/target/
+
+# Generated PoCs and reports
+/exploits/
+/pocs/
+security_report.md
+
+# OS and editor files
+.DS_Store
+*.swp
+.idea/
+.vscode/
