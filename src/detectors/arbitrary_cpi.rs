@@ -64,7 +64,16 @@ impl ArbitraryCpiDetector {
     fn is_program_validated(&self, source: &str, program_var: &str, invoke_line: usize) -> bool {
         let lines: Vec<&str> = source.lines().collect();
         let start = invoke_line.saturating_sub(15);
-        
+
+        // Manual check such as `if ctx.accounts.token_program.key != &spl_token::ID`
+        let window = lines
+            .get(start..invoke_line.min(lines.len()))
+            .map(|w| w.join("\n"))
+            .unwrap_or_default();
+        if window.contains(program_var) && super::utils::has_program_id_check(&window) {
+            return true;
+        }
+
         for i in start..invoke_line {
             if let Some(line) = lines.get(i) {
                 let lower = line.to_lowercase();
