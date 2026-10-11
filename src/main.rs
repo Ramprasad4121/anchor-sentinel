@@ -341,7 +341,9 @@ fn perform_scan(path: &PathBuf, recursive: bool) -> Result<Vec<Finding>> {
         match parse_anchor_files(file_path) {
             Ok(context) => {
                 let findings = registry.run_all(&context);
-                all_findings.extend(findings);
+                // Several detectors (AST and source passes) can flag the same
+                // line; keep one finding per detector, file and line.
+                all_findings.extend(anchor_sentinel::detectors::utils::deduplicate_findings(findings));
             }
             Err(e) => {
                 log::warn!("Failed to parse {}: {}", file_path.display(), e);

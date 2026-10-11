@@ -76,6 +76,9 @@ impl PdaBumpDetector {
                     || lower.contains("require!(bump")
                     || lower.contains("require_eq!(bump")
                     || lower.contains("bump ==")
+                    || lower.contains("bump !=")
+                    || lower.contains("!= bump")
+                    || lower.contains("== bump")
                     || lower.contains(".bump")
                     || lower.contains("bump:")
                 {
@@ -149,7 +152,10 @@ impl VulnerabilityDetector for PdaBumpDetector {
 
         for (line_num, line) in source.lines().enumerate() {
             for pattern in &patterns {
-                if pattern.is_match(line) && !self.has_bump_verification(source, line_num) {
+                if !pattern.is_match(line) {
+                    continue;
+                }
+                if !self.has_bump_verification(source, line_num) {
                     let seeds = self.extract_seeds(line);
                     
                     findings.push(Finding {
@@ -170,6 +176,8 @@ impl VulnerabilityDetector for PdaBumpDetector {
                         confidence: 0.85,
                     });
                 }
+                // One finding per line even if several patterns match.
+                break;
             }
         }
         findings
