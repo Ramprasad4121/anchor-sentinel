@@ -207,7 +207,11 @@ mod tests {
             pub fn safe_cpi(ctx: Context<SafeCpi>) -> Result<()> {
                 let cpi_ctx = CpiContext::new(
                     ctx.accounts.token_program.to_account_info(),
-                    Transfer { from: ..., to: ..., authority: ... }
+                    Transfer {
+                        from: ctx.accounts.from.to_account_info(),
+                        to: ctx.accounts.to.to_account_info(),
+                        authority: ctx.accounts.authority.to_account_info(),
+                    }
                 );
                 token::transfer(cpi_ctx, amount)?;
                 Ok(())
