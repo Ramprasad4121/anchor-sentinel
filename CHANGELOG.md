@@ -19,7 +19,7 @@ Accuracy, output and packaging release. Work done 11 Oct 2026.
 
 ### Added
 - BENCHMARK.md: results against coral-xyz/sealevel-attacks (4 of 11 classes detected, 1 partial, 6 missed; the target finding no longer fires on any hand-fixed version, it did on 4 of 4 before). Script in `benchmarks/sealevel-attacks.sh`.
-- Prebuilt static Linux binaries (x86_64 and aarch64, musl) on the GitHub release.
+- Prebuilt binaries on the GitHub release: Linux x86_64 (static, musl) and macOS arm64, built and smoke tested by a new release workflow (`.github/workflows/release.yml`).
 - Unit tests for the manual check helpers.
 
 ### Changed
