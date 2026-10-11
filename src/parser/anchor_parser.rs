@@ -14,6 +14,7 @@
 //! - [`extract_error_codes`] - Extract `#[error_code]` enum variants
 
 use super::*;
+use syn::spanned::Spanned;
 use syn::visit::Visit;
 use syn::{Attribute, Field, Fields, File, GenericArgument, ItemStruct, PathArguments, Type};
 
@@ -146,7 +147,11 @@ impl AccountStructVisitor {
             is_mutable,
             is_signer,
             is_init,
-            line: 0,
+            line: field
+                .ident
+                .as_ref()
+                .map(|i| i.span().start().line)
+                .unwrap_or_else(|| field.span().start().line),
         }
     }
 }
@@ -166,8 +171,8 @@ impl<'ast> Visit<'ast> for AccountStructVisitor {
             self.accounts.push(AccountStruct {
                 name: node.ident.to_string(),
                 fields,
-                start_line: 0,
-                end_line: 0,
+                start_line: node.ident.span().start().line,
+                end_line: node.span().end().line,
             });
         }
 
@@ -457,7 +462,7 @@ impl<'ast> Visit<'ast> for StateAccountVisitor {
                 name: node.ident.to_string(),
                 fields,
                 has_discriminator: true,
-                line: 0,
+                line: node.span().start().line,
             });
         }
 

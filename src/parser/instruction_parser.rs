@@ -11,6 +11,7 @@
 //! - [`extract_instruction_handlers`] - Extract all instruction handlers from AST
 
 use super::*;
+use syn::spanned::Spanned;
 use syn::visit::Visit;
 use syn::{Attribute, BinOp, Expr, ExprBinary, ExprCall, ExprMethodCall, File, ItemFn, Signature};
 
@@ -143,8 +144,8 @@ impl<'ast> Visit<'ast> for InstructionVisitor {
                 name: node.sig.ident.to_string(),
                 accounts_type: accounts_type.unwrap_or_default(),
                 args: self.extract_args(&node.sig),
-                start_line: 0,
-                end_line: 0,
+                start_line: node.span().start().line,
+                end_line: node.span().end().line,
                 arithmetic_ops: analyzer.arithmetic_ops,
                 cpi_calls: analyzer.cpi_calls,
             });
@@ -208,7 +209,7 @@ impl<'ast> Visit<'ast> for FunctionBodyAnalyzer {
             self.arithmetic_ops.push(ArithmeticOp {
                 operation: op.to_string(),
                 is_checked: false,
-                line: 0,
+                line: node.span().start().line,
                 expression: quote::quote!(#node).to_string(),
             });
         }
@@ -233,7 +234,7 @@ impl<'ast> Visit<'ast> for FunctionBodyAnalyzer {
             self.arithmetic_ops.push(ArithmeticOp {
                 operation: op_type.to_string(),
                 is_checked: true,
-                line: 0,
+                line: node.span().start().line,
                 expression: quote::quote!(#node).to_string(),
             });
         }
@@ -242,7 +243,7 @@ impl<'ast> Visit<'ast> for FunctionBodyAnalyzer {
             self.cpi_calls.push(CpiCall {
                 program: "Unknown".to_string(),
                 is_program_hardcoded: false,
-                line: 0,
+                line: node.span().start().line,
             });
         }
 
@@ -256,7 +257,7 @@ impl<'ast> Visit<'ast> for FunctionBodyAnalyzer {
                 self.cpi_calls.push(CpiCall {
                     program: "Unknown".to_string(),
                     is_program_hardcoded: false,
-                    line: 0,
+                    line: node.span().start().line,
                 });
             }
         }
