@@ -37,7 +37,7 @@
 //! - CWE-345: Insufficient Verification of Data Authenticity
 
 use crate::detectors::VulnerabilityDetector;
-use crate::parser::AnalysisContext;
+use crate::parser::{AccountType, AnalysisContext, ConstraintType};
 use crate::report::{Finding, Severity};
 
 /// Detector for unverified PDA seeds.
@@ -85,55 +85,57 @@ impl VulnerabilityDetector for UnverifiedSeedsDetector {
     /// A vector of findings for each PDA without seeds verification.
     fn detect(&self, context: &AnalysisContext) -> Vec<Finding> {
         let mut findings = Vec::new();
-        let source = &context.source_code;
+        let pda_names = ["pda", "vault", "state", "config", "pool", "escrow", "authority"];
 
-        let mut in_accounts_struct = false;
-        let mut struct_name = String::new();
-
-        for (line_num, line) in source.lines().enumerate() {
-            if line.contains("#[derive(Accounts)]") {
-                in_accounts_struct = true;
-                continue;
-            }
-
-            if in_accounts_struct {
-                if line.contains("pub struct") {
-                    if let Some(name) = line.split_whitespace().nth(2) {
-                        struct_name = name.trim_end_matches('<').to_string();
-                    }
+        // Use the parsed account structs so multi-line #[account(...)]
+        // attributes (seeds on their own line) are understood.
+        for account_struct in &context.accounts {
+            for field in &account_struct.fields {
+                let is_raw_or_typed = matches!(
+                    field.ty,
+                    AccountType::AccountInfo | AccountType::Account(_)
+                );
+                if !is_raw_or_typed {
+                    continue;
                 }
-
-                let pda_names = ["pda", "vault", "state", "config", "pool", "escrow", "authority"];
-                
-                for pda_name in &pda_names {
-                    if line.to_lowercase().contains(pda_name) 
-                        && !line.contains("seeds")
-                        && !line.contains("constraint")
-                        && (line.contains("AccountInfo") || line.contains("Account<"))
-                    {
-                        findings.push(Finding {
-                            id: format!("V021-{}", line_num + 1),
-                            detector_id: self.id().to_string(),
-                            title: format!("PDA '{}' without seeds verification", pda_name),
-                            description: format!(
-                                "Account appears to be a PDA but lacks #[account(seeds=...)] constraint. \
-                                 Attackers could pass arbitrary accounts."
-                            ),
-                            severity: self.severity(),
-                            file_path: context.file_path.clone(),
-                            line: line_num + 1,
-                            location: format!("{}::{}:{}", struct_name, pda_name, line_num + 1),
-                            code_snippet: Some(line.trim().to_string()),
-                            remediation: self.remediation().to_string(),
-                            cwe: self.cwe().map(|s| s.to_string()),
-                            confidence: 0.65,
-                        });
-                    }
+                let has_seeds_or_address = field.constraints.iter().any(|c| {
+                    matches!(
+                        c.constraint_type,
+                        ConstraintType::Seeds(_)
+                            | ConstraintType::Address(_)
+                            | ConstraintType::Constraint(_)
+                    )
+                });
+                if has_seeds_or_address {
+                    continue;
                 }
+                let lower = field.name.to_lowercase();
+                let Some(pda_name) = pda_names.iter().find(|n| lower.contains(*n)) else {
+                    continue;
+                };
+                let line = field.line;
+                let snippet = context
+                    .source_code
+                    .lines()
+                    .nth(line.saturating_sub(1))
+                    .map(|l| l.trim().to_string());
 
-                if line.trim() == "}" {
-                    in_accounts_struct = false;
-                }
+                findings.push(Finding {
+                    id: format!("V021-{}", line),
+                    detector_id: self.id().to_string(),
+                    title: format!("PDA '{}' without seeds verification", pda_name),
+                    description: "Account appears to be a PDA but lacks #[account(seeds=...)] constraint. \
+                         Attackers could pass arbitrary accounts."
+                        .to_string(),
+                    severity: self.severity(),
+                    file_path: context.file_path.clone(),
+                    line,
+                    location: format!("{}::{}:{}", account_struct.name, field.name, line),
+                    code_snippet: snippet,
+                    remediation: self.remediation().to_string(),
+                    cwe: self.cwe().map(|s| s.to_string()),
+                    confidence: 0.65,
+                });
             }
         }
         findings
