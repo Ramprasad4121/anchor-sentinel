@@ -36,7 +36,7 @@ Detected = the right detector fires on the vulnerable account or call, at the ri
 | 3 | Type cosplay | **Missed.** No discriminator check detector. (v0.1.0 raised a wrong V002 here even though the owner is checked; now gone) | n/a | n/a |
 | 4 | Initialization (reinit) | **Missed.** V002/V024 fire on other things, not the reinit | n/a | n/a |
 | 5 | Arbitrary CPI | Yes, V006 line 11 | Yes (v0.1.0: no, V006 fired twice) | Yes |
-| 6 | Duplicate mutable accounts | **Missed.** No detector for this class | n/a | n/a |
+| 6 | Duplicate mutable accounts | **Missed.** V028 exists now, but this example has no `mut` on either account, so V028 (which needs two `mut` accounts of one type) does not fire. Rerun 17 Oct 2026: all other results unchanged | n/a | n/a |
 | 7 | Bump seed canonicalization | Yes, V008 line 11 | Yes (v0.1.0: no, V008 fired twice) | Yes |
 | 8 | PDA sharing | **Missed.** V021 fires on all three versions alike, so it gives no signal for shared seeds | n/a | n/a |
 | 9 | Closing accounts (3 insecure variants) | **Missed** on all 3. No detector for zeroing data / closed discriminator | n/a | n/a |
