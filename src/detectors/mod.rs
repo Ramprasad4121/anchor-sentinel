@@ -49,6 +49,7 @@ mod account_usage;
 mod arbitrary_cpi;
 mod precision_loss;
 mod scope_validation;
+mod duplicate_mutable;
 pub mod utils;
 
 pub use integer_overflow::IntegerOverflowDetector;
@@ -77,6 +78,7 @@ pub use account_usage::AccountUsageDetector;
 pub use arbitrary_cpi::ArbitraryCpiDetector;
 pub use precision_loss::PrecisionLossDetector;
 pub use scope_validation::ScopeValidationDetector;
+pub use duplicate_mutable::DuplicateMutableDetector;
 
 use crate::parser::AnalysisContext;
 use crate::report::{Finding, Severity};
@@ -202,6 +204,8 @@ impl DetectorRegistry {
             Box::new(PrecisionLossDetector::new()),
             // Advanced Analysis: V027 (Scope Validation)
             Box::new(ScopeValidationDetector::new()),
+            // Account validation: V028 (Duplicate Mutable Accounts)
+            Box::new(DuplicateMutableDetector::new()),
         ];
 
         Self { detectors }

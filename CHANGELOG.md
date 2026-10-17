@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Added
+- V028 Duplicate Mutable Accounts. Flags two mutable `Account<'info, T>` fields of the same type with no check that they are different accounts. It stays quiet when a constraint or the handler compares the keys (`a.key() != b.key()`, `require_keys_neq!`), for `init` fields, token and mint pairs, and pairs with different static seed prefixes. A field marked `dup` gets a higher confidence finding, because it opts out of Anchor's own check. Anchor 1.0 rejects duplicate mutable `Account` fields by default; older versions do not.
+
 ### Changed
 - `cargo clippy --all-targets -- -D warnings` is clean on Rust 1.99.
 - Added CI that runs clippy and the tests on every push and pull request.
