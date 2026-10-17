@@ -46,7 +46,7 @@ pub fn to_markdown(report: &Report) -> String {
         "| **Files Analyzed** | {} |\n",
         report.metadata.files_analyzed
     ));
-    md.push_str("\n");
+    md.push('\n');
 
     // Summary
     md.push_str("## Summary\n\n");
@@ -58,7 +58,7 @@ pub fn to_markdown(report: &Report) -> String {
     md.push_str(&format!("| Low | {} |\n", report.summary.low));
     md.push_str(&format!("| Info | {} |\n", report.summary.info));
     md.push_str(&format!("| **Total** | **{}** |\n", report.summary.total));
-    md.push_str("\n");
+    md.push('\n');
 
     // Findings
     if report.findings.is_empty() {

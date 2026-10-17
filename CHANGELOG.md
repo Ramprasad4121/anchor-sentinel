@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+- `cargo clippy --all-targets -- -D warnings` is clean on Rust 1.99.
+- Added CI that runs clippy and the tests on every push and pull request.
+
 ## v0.2.1 (11 Oct 2026)
 
 ### Fixed

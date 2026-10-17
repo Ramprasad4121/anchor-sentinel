@@ -16,7 +16,6 @@
 //! - **Pass 2 (Detection)**: Run detectors with global context injected
 
 use std::collections::HashMap;
-use std::path::Path;
 
 /// Information about a struct definition.
 #[derive(Debug, Clone, Default)]
@@ -92,7 +91,7 @@ impl ProgramContext {
 
     /// Extracts struct, constant, and function info from a parsed file.
     fn extract_from_file(&mut self, path: &str, file: &syn::File) {
-        use syn::{Item, ItemStruct, ItemConst, ItemFn, Fields};
+        use syn::Item;
         
         for item in &file.items {
             match item {

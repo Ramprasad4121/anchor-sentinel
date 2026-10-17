@@ -168,15 +168,13 @@ impl PdaCollisionDetector {
         // Check for generic seed patterns
         for seed in seeds {
             let lower = seed.to_lowercase();
-            if lower.contains("\"admin\"")
+            if (lower.contains("\"admin\"")
                 || lower.contains("\"config\"")
-                || lower.contains("\"state\"")
-            {
-                if seeds.len() == 1 || !has_dynamic {
+                || lower.contains("\"state\""))
+                && (seeds.len() == 1 || !has_dynamic) {
                     issues.push("Generic seed without unique identifier");
                     break;
                 }
-            }
         }
 
         if !issues.is_empty() {
@@ -234,7 +232,8 @@ impl PdaCollisionDetector {
         let mut findings = Vec::new();
 
         // Group PDAs by their normalized seed pattern
-        let mut pda_registry: std::collections::HashMap<String, Vec<&(String, String, Vec<String>, bool, usize)>> = 
+        #[allow(clippy::type_complexity)]
+        let mut pda_registry: std::collections::HashMap<String, Vec<&(String, String, Vec<String>, bool, usize)>> =
             std::collections::HashMap::new();
 
         for pda in all_pdas {
@@ -257,9 +256,7 @@ impl PdaCollisionDetector {
                 let finding = create_finding(
                     self,
                     context,
-                    format!(
-                        "Multiple contexts initialize PDA with identical seeds"
-                    ),
+                    "Multiple contexts initialize PDA with identical seeds".to_string(),
                     format!(
                         "The following contexts all try to INITIALIZE a PDA with seeds [{}]:\n{}\n\n\
                          This is a real collision vulnerability. Only ONE context should \
@@ -301,6 +298,7 @@ impl PdaCollisionDetector {
     }
 
     /// Compares two seed sets for potential collision.
+    #[allow(dead_code)]
     fn seeds_match(&self, seeds1: &[String], seeds2: &[String]) -> bool {
         if seeds1.len() != seeds2.len() {
             return false;

@@ -26,7 +26,7 @@
 //! ```
 
 use std::collections::HashMap;
-use syn::{visit::{self, Visit}, Expr, ExprCall, ExprIf, ExprBlock, ExprLoop, ExprForLoop, ExprWhile};
+use syn::{visit::{self, Visit}, ExprCall, ExprIf, ExprBlock, ExprLoop, ExprForLoop, ExprWhile};
 
 /// Tracks scope depth and variable states.
 #[derive(Debug, Default)]
@@ -40,6 +40,7 @@ pub struct ScopeTracker {
     /// Usages found: (var_name, line, usage_scope)
     usages: Vec<(String, usize, usize)>,
     /// Helper to track line numbers from AST spans (simplified)
+    #[allow(dead_code)]
     current_line: usize,
 }
 

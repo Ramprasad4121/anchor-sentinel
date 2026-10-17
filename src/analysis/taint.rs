@@ -17,10 +17,10 @@
 //! - `TaintContext`: Maps scopes/variables to statuses
 //!
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use syn::{
     visit::{self, Visit}, Expr, ExprCall, ExprMethodCall, ExprPath, ItemFn, 
-    Pat, Local, Stmt, Block, ExprIf, ExprMacro, FnArg, PatIdent,
+    Pat, Local, Stmt, ExprIf, ExprMacro, FnArg, PatIdent,
 };
 
 /// Represents the taint status of a variable.
