@@ -165,6 +165,7 @@ jobs:
 /// # Returns
 ///
 /// Returns `Ok(())` on success, or an error if scanning fails.
+#[allow(clippy::too_many_arguments)]
 fn run_scan(
     path: PathBuf,
     recursive: bool,
@@ -175,7 +176,7 @@ fn run_scan(
     exclude: Vec<String>,
     only: Vec<String>,
 ) -> Result<()> {
-    use anchor_sentinel::parser::parse_anchor_files;
+    
     use anchor_sentinel::poc_generator::PocGenerator;
 
     // json and github output must be parseable from stdout, so status lines
@@ -207,19 +208,13 @@ fn run_scan(
     // Filter out excluded detectors
     if !exclude.is_empty() {
         let exclude_upper: Vec<String> = exclude.iter().map(|s| s.to_uppercase()).collect();
-        findings = findings
-            .into_iter()
-            .filter(|f| !exclude_upper.contains(&f.detector_id.to_uppercase()))
-            .collect();
+        findings.retain(|f| !exclude_upper.contains(&f.detector_id.to_uppercase()));
     }
 
     // Include only specific detectors (if --only is specified)
     if !only.is_empty() {
         let only_upper: Vec<String> = only.iter().map(|s| s.to_uppercase()).collect();
-        findings = findings
-            .into_iter()
-            .filter(|f| only_upper.contains(&f.detector_id.to_uppercase()))
-            .collect();
+        findings.retain(|f| only_upper.contains(&f.detector_id.to_uppercase()));
     }
 
     let report = Report::new(findings, path.clone());
@@ -402,7 +397,7 @@ fn run_diff(old_path: PathBuf, new_path: PathBuf) -> Result<()> {
         let mut seen: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
         let mut map = std::collections::HashMap::new();
         for f in findings {
-            let relative = pathdiff::diff_paths(&PathBuf::from(&f.file_path), base_path)
+            let relative = pathdiff::diff_paths(PathBuf::from(&f.file_path), base_path)
                 .unwrap_or(PathBuf::from(&f.file_path));
             let base = format!("{}:{}:{}", f.detector_id, relative.display(), f.title);
             let n = seen.entry(base.clone()).or_insert(0);
@@ -492,7 +487,7 @@ fn collect_rust_files(dir: &PathBuf, recursive: bool) -> Result<Vec<PathBuf>> {
         .into_iter()
         .filter_map(|e| e.ok())
         .filter(|e| {
-            e.path().extension().map_or(false, |ext| ext == "rs")
+            e.path().extension().is_some_and(|ext| ext == "rs")
                 && !e.path().to_string_lossy().contains("target")
         })
         .map(|e| e.path().to_path_buf())

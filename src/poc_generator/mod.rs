@@ -11,6 +11,9 @@
 //! - Individual POC files per detector (e.g., `poc_v001.ts`)
 //! - Combined POC file with all exploits (`poc_all_exploits.ts`)
 
+// Legacy template-based generator, kept for reference; the active path is elsewhere.
+#![allow(dead_code)]
+
 mod templates;
 
 use crate::report::Finding;
@@ -486,7 +489,7 @@ flowchart TD
             crate::report::Severity::Info => "[INFO]",
         };
 
-        let escaped_title = finding.title.replace('`', "'").replace('"', "'");
+        let escaped_title = finding.title.replace(['`', '"'], "'");
         
         format!(r#"
     it("{severity} #{index}: {title}", async () => {{

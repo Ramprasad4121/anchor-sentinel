@@ -6,6 +6,9 @@
 //! Contains Handlebars templates for generating TypeScript proof-of-concept
 //! exploit tests for each vulnerability type.
 
+// Legacy template-based generator, kept for reference; the active path is elsewhere.
+#![allow(dead_code)]
+
 /// Common header included in all POC files.
 pub const HEADER_TEMPLATE: &str = r#"/**
  * Anchor-Sentinel POC Exploit: {{detector_id}}

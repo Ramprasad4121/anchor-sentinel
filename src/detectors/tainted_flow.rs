@@ -142,7 +142,6 @@ impl Default for TaintedFlowDetector {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::analysis::taint::{TaintContext, TaintStatus};
 
     #[test]

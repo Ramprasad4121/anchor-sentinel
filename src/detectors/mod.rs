@@ -232,7 +232,7 @@ impl DetectorRegistry {
             all_findings.extend(findings);
         }
 
-        all_findings.sort_by(|a, b| b.severity.cmp(&a.severity));
+        all_findings.sort_by_key(|f| std::cmp::Reverse(f.severity));
 
         all_findings
     }
