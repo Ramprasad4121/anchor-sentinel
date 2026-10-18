@@ -22,9 +22,9 @@ It is a first pass before an audit, not a replacement for one.
 ## Quick start
 
 ```bash
-# Linux x86_64 prebuilt binary (v0.2.1). macOS arm64 build is on the release page too.
-curl -LO https://github.com/Ramprasad4121/anchor-sentinel/releases/download/v0.2.1/anchor-sentinel-v0.2.1-x86_64-unknown-linux-musl.tar.gz
-tar xzf anchor-sentinel-v0.2.1-x86_64-unknown-linux-musl.tar.gz
+# Linux x86_64 prebuilt binary (v0.3.0). macOS arm64 build is on the release page too.
+curl -LO https://github.com/Ramprasad4121/anchor-sentinel/releases/download/v0.3.0/anchor-sentinel-v0.3.0-x86_64-unknown-linux-musl.tar.gz
+tar xzf anchor-sentinel-v0.3.0-x86_64-unknown-linux-musl.tar.gz
 sudo mv anchor-sentinel /usr/local/bin/
 
 # scan your Anchor program
@@ -71,11 +71,11 @@ $ anchor-sentinel scan tests/test_contracts/vulnerable_vault.rs
 
 ## Install
 
-**Prebuilt binary.** Download from the [v0.2.1 release](https://github.com/Ramprasad4121/anchor-sentinel/releases/tag/v0.2.1): Linux x86_64 (static, musl) and macOS Apple Silicon (`aarch64-apple-darwin`). Each archive has a `.sha256` file next to it. Built and smoke tested by the release workflow.
+**Prebuilt binary.** Download from the [v0.3.0 release](https://github.com/Ramprasad4121/anchor-sentinel/releases/tag/v0.3.0): Linux x86_64 (static, musl) and macOS Apple Silicon (`aarch64-apple-darwin`). Each archive has a `.sha256` file next to it. Built and smoke tested by the release workflow.
 
 **Cargo (any OS with Rust):**
 ```bash
-cargo install --git https://github.com/Ramprasad4121/anchor-sentinel --tag v0.2.1
+cargo install --git https://github.com/Ramprasad4121/anchor-sentinel --tag v0.3.0
 ```
 
 **From source:**

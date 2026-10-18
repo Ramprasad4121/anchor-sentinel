@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.3.0 (19 Oct 2026)
 
 ### Added
 - V028 Duplicate Mutable Accounts. Flags two mutable `Account<'info, T>` fields of the same type with no check that they are different accounts. It stays quiet when a constraint or the handler compares the keys (`a.key() != b.key()`, `require_keys_neq!`), for `init` fields, token and mint pairs, and pairs with different static seed prefixes. A field marked `dup` gets a higher confidence finding, because it opts out of Anchor's own check. Anchor 1.0 rejects duplicate mutable `Account` fields by default; older versions do not.
