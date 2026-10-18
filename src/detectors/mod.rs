@@ -50,6 +50,7 @@ mod arbitrary_cpi;
 mod precision_loss;
 mod scope_validation;
 mod duplicate_mutable;
+mod sysvar_address;
 pub mod utils;
 
 pub use integer_overflow::IntegerOverflowDetector;
@@ -79,6 +80,7 @@ pub use arbitrary_cpi::ArbitraryCpiDetector;
 pub use precision_loss::PrecisionLossDetector;
 pub use scope_validation::ScopeValidationDetector;
 pub use duplicate_mutable::DuplicateMutableDetector;
+pub use sysvar_address::SysvarAddressDetector;
 
 use crate::parser::AnalysisContext;
 use crate::report::{Finding, Severity};
@@ -206,6 +208,8 @@ impl DetectorRegistry {
             Box::new(ScopeValidationDetector::new()),
             // Account validation: V028 (Duplicate Mutable Accounts)
             Box::new(DuplicateMutableDetector::new()),
+            // Account validation: V029 (Unchecked Sysvar Address)
+            Box::new(SysvarAddressDetector::new()),
         ];
 
         Self { detectors }

@@ -4,6 +4,7 @@
 
 ### Added
 - V028 Duplicate Mutable Accounts. Flags two mutable `Account<'info, T>` fields of the same type with no check that they are different accounts. It stays quiet when a constraint or the handler compares the keys (`a.key() != b.key()`, `require_keys_neq!`), for `init` fields, token and mint pairs, and pairs with different static seed prefixes. A field marked `dup` gets a higher confidence finding, because it opts out of Anchor's own check. Anchor 1.0 rejects duplicate mutable `Account` fields by default; older versions do not.
+- V029 Unchecked Sysvar Address (sealevel-attacks class 10). Flags a raw `AccountInfo` or `UncheckedAccount` named like a sysvar (`rent`, `clock`, `instructions`, anything with `sysvar` in the name) when nothing ties it to the real sysvar address. Quiet for `Sysvar<'info, T>` fields, `address = ...` constraints, key comparisons to a `sysvar::...::ID`, and the checked readers (`from_account_info`, `load_instruction_at_checked`, `load_current_index_checked`, `get_instruction_relative`). The instructions sysvar is rated High, the others Medium. Background: the 2022 Wormhole Solana loss came from a forged instructions sysvar.
 
 ### Changed
 - `cargo clippy --all-targets -- -D warnings` is clean on Rust 1.99.
