@@ -40,9 +40,9 @@ Detected = the right detector fires on the vulnerable account or call, at the ri
 | 7 | Bump seed canonicalization | Yes, V008 line 11 | Yes (v0.1.0: no, V008 fired twice) | Yes |
 | 8 | PDA sharing | **Missed.** V021 fires on all three versions alike, so it gives no signal for shared seeds | n/a | n/a |
 | 9 | Closing accounts (3 insecure variants) | **Missed** on all 3. No detector for zeroing data / closed discriminator | n/a | n/a |
-| 10 | Sysvar address checking | **Missed.** V002 skips accounts named like sysvars (`rent`) | n/a | n/a |
+| 10 | Sysvar address checking | Yes, V029 line 17 (added 19 Oct 2026) | Yes, no V029 | Yes, uses `Sysvar<'info, Rent>`, no V029 |
 
-Score: 4 detected, 1 partial, 6 missed.
+Score: 5 detected, 1 partial, 5 missed (class 10 added by V029 on 19 Oct 2026; the other rows are from the 11 Oct run, and a rerun on 19 Oct 2026 changed only the class 10 line).
 
 ## Raw output (v0.2.0)
 
@@ -102,6 +102,6 @@ Detector ID and line for every finding. `-` means no findings.
 ## What this means
 
 - The core first-pass checks work: missing signer, missing owner, arbitrary CPI, bump canonicalization. With v0.2.0 they no longer fire once the bug is fixed by hand.
-- Six classes have no detector yet: type cosplay, reinitialization, duplicate mutable accounts, PDA sharing, account closing, sysvar address. These are the roadmap.
+- Five classes are still missed: type cosplay, reinitialization, duplicate mutable accounts, PDA sharing, account closing. These are the roadmap.
 - V009, V010, V021 and V024 need tuning or a lower default severity. Use `--exclude` or `--severity` to cut noise today.
 - This is static analysis. It is a first pass, not an audit.
