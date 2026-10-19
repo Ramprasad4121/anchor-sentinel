@@ -51,6 +51,7 @@ mod precision_loss;
 mod scope_validation;
 mod duplicate_mutable;
 mod sysvar_address;
+mod type_cosplay;
 pub mod utils;
 
 pub use integer_overflow::IntegerOverflowDetector;
@@ -81,6 +82,7 @@ pub use precision_loss::PrecisionLossDetector;
 pub use scope_validation::ScopeValidationDetector;
 pub use duplicate_mutable::DuplicateMutableDetector;
 pub use sysvar_address::SysvarAddressDetector;
+pub use type_cosplay::TypeCosplayDetector;
 
 use crate::parser::AnalysisContext;
 use crate::report::{Finding, Severity};
@@ -210,6 +212,8 @@ impl DetectorRegistry {
             Box::new(DuplicateMutableDetector::new()),
             // Account validation: V029 (Unchecked Sysvar Address)
             Box::new(SysvarAddressDetector::new()),
+            // Account validation: V030 (Type Cosplay)
+            Box::new(TypeCosplayDetector::new()),
         ];
 
         Self { detectors }
