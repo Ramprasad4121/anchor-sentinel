@@ -153,6 +153,7 @@ Output of `anchor-sentinel list` (28 detectors; ID V020 is not used):
 | V027 | Scope-Limited Validation | High |
 | V028 | Duplicate Mutable Accounts | Medium |
 | V029 | Unchecked Sysvar Address | Medium |
+| V030 | Type Cosplay | High |
 
 ## Benchmark
 

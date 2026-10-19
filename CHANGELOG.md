@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- V030 Type Cosplay. Flags raw `AccountInfo` or `UncheckedAccount` fields read by hand with Borsh (`try_from_slice`, `deserialize`) and no discriminator check. Quiet for typed `Account<T>`, `try_deserialize`, and manual discriminator compares.
+
 ## v0.3.0 (19 Oct 2026)
 
 ### Added
