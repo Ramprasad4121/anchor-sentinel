@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/License-GPL--3.0-blue?style=for-the-badge" alt="License"/>
 </p>
 
-Anchor-Sentinel scans Anchor programs written in Rust for common Solana security bugs: missing signer checks, unchecked owners, unsafe CPIs, weak PDA seeds and more. It runs 28 detectors on the parsed Rust AST, prints each finding with file, line, severity and a fix, and can write TypeScript exploit test scaffolds for what it finds.
+Anchor-Sentinel scans Anchor programs written in Rust for common Solana security bugs: missing signer checks, unchecked owners, unsafe CPIs, weak PDA seeds and more. It runs 30 detectors on the parsed Rust AST, prints each finding with file, line, severity and a fix, and can write TypeScript exploit test scaffolds for what it finds.
 
 It is a first pass before an audit, not a replacement for one.
 
@@ -121,7 +121,7 @@ The tests are scaffolds. Instruction and account names are guessed from the sour
 
 ## Detectors
 
-Output of `anchor-sentinel list` (28 detectors; ID V020 is not used):
+Output of `anchor-sentinel list` (30 detectors; ID V020 is not used):
 
 | ID | Name | Severity |
 |----|------|----------|
@@ -154,6 +154,7 @@ Output of `anchor-sentinel list` (28 detectors; ID V020 is not used):
 | V028 | Duplicate Mutable Accounts | Medium |
 | V029 | Unchecked Sysvar Address | Medium |
 | V030 | Type Cosplay | High |
+| V031 | Manual Close Without Cleanup | Medium |
 
 ## Benchmark
 

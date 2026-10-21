@@ -52,6 +52,7 @@ mod scope_validation;
 mod duplicate_mutable;
 mod sysvar_address;
 mod type_cosplay;
+mod closing_accounts;
 pub mod utils;
 
 pub use integer_overflow::IntegerOverflowDetector;
@@ -83,6 +84,7 @@ pub use scope_validation::ScopeValidationDetector;
 pub use duplicate_mutable::DuplicateMutableDetector;
 pub use sysvar_address::SysvarAddressDetector;
 pub use type_cosplay::TypeCosplayDetector;
+pub use closing_accounts::ClosingAccountsDetector;
 
 use crate::parser::AnalysisContext;
 use crate::report::{Finding, Severity};
@@ -214,6 +216,8 @@ impl DetectorRegistry {
             Box::new(SysvarAddressDetector::new()),
             // Account validation: V030 (Type Cosplay)
             Box::new(TypeCosplayDetector::new()),
+            // Account lifecycle: V031 (Manual Close Without Cleanup)
+            Box::new(ClosingAccountsDetector::new()),
         ];
 
         Self { detectors }

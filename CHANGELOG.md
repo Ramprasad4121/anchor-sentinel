@@ -3,7 +3,11 @@
 ## Unreleased
 
 ### Added
+- V031 Manual Close Without Cleanup (sealevel-attacks class 9). Flags a handler that sets an account's lamports to zero (`**acc.lamports.borrow_mut() = 0`, `try_borrow_mut_lamports`, `sub_lamports(acc.lamports())`) and never clears the data, reassigns the owner, shrinks the account or calls `.close(...)`. Follows `let a = acc.to_account_info()` aliases. Quiet for `close = target`, partial withdrawals, and any handler that zeroes data, assigns, reallocs or closes. Background: Anchor 0.30 dropped the closed account discriminator, so data cleanup or `close =` is what matters now.
 - V030 Type Cosplay. Flags raw `AccountInfo` or `UncheckedAccount` fields read by hand with Borsh (`try_from_slice`, `deserialize`) and no discriminator check. Quiet for typed `Account<T>`, `try_deserialize`, and manual discriminator compares.
+
+### Fixed
+- V030 no longer flags a handler that checks a custom `discriminant` enum on the deserialized account (the sealevel-attacks `3-type-cosplay/secure` false positive).
 
 ## v0.3.0 (19 Oct 2026)
 

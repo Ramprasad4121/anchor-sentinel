@@ -33,18 +33,18 @@ Detected = the right detector fires on the vulnerable account or call, at the ri
 | 0 | Signer authorization | Yes, V001 line 16 | Yes (v0.1.0: no, V001 still fired) | Yes |
 | 1 | Account data matching | Partial. V002 flags the unchecked `token` account (line 20) as a missing owner check. The data mismatch itself is not modelled | n/a. V002 still fires, correctly: this secure version adds the data check but still has no owner check | Yes |
 | 2 | Owner checks | Yes, V002 line 24 | Yes (v0.1.0: no) | Yes |
-| 3 | Type cosplay | **Missed.** No discriminator check detector. (v0.1.0 raised a wrong V002 here even though the owner is checked; now gone) | n/a | n/a |
+| 3 | Type cosplay | Yes, V030 line 25 (added 19 Oct 2026). Secure version is quiet: it checks a custom `discriminant` enum, which V030 now accepts | Yes, no V030 | Yes, no V030 |
 | 4 | Initialization (reinit) | **Missed.** V002/V024 fire on other things, not the reinit | n/a | n/a |
 | 5 | Arbitrary CPI | Yes, V006 line 11 | Yes (v0.1.0: no, V006 fired twice) | Yes |
 | 6 | Duplicate mutable accounts | **Missed.** V028 exists now, but this example has no `mut` on either account, so V028 (which needs two `mut` accounts of one type) does not fire. Rerun 17 Oct 2026: all other results unchanged | n/a | n/a |
 | 7 | Bump seed canonicalization | Yes, V008 line 11 | Yes (v0.1.0: no, V008 fired twice) | Yes |
 | 8 | PDA sharing | **Missed.** V021 fires on all three versions alike, so it gives no signal for shared seeds | n/a | n/a |
-| 9 | Closing accounts (3 insecure variants) | **Missed** on all 3. No detector for zeroing data / closed discriminator | n/a | n/a |
+| 9 | Closing accounts (3 insecure variants) | **Partial.** V031 line 23 flags `insecure` (lamports set to 0, data and owner untouched). `insecure-still` and `insecure-still-still` zero the data first and are not flagged on purpose: the zeroed discriminator makes `Account<T>` reject the account, and Anchor 0.30 removed the closed account discriminator | Yes, no V031 on `secure` | Yes, uses `close = destination`, no V031 |
 | 10 | Sysvar address checking | Yes, V029 line 17 (added 19 Oct 2026) | Yes, no V029 | Yes, uses `Sysvar<'info, Rent>`, no V029 |
 
-Score: 5 detected, 1 partial, 5 missed (class 10 added by V029 on 19 Oct 2026; the other rows are from the 11 Oct run, and a rerun on 19 Oct 2026 changed only the class 10 line).
+Score: 6 detected, 2 partial (1 and 9), 3 missed (4, 6, 8). Rerun on 21 Oct 2026 against sealevel-attacks main; the findings for the other classes are unchanged from the 11 Oct run.
 
-## Raw output (v0.2.0)
+## Raw output (main, 21 Oct 2026)
 
 Detector ID and line for every finding. `-` means no findings.
 
@@ -55,16 +55,16 @@ Detector ID and line for every finding. `-` means no findings.
 1-account-data-matching/insecure                 V002:20
 1-account-data-matching/recommended              -
 1-account-data-matching/secure                   V002:23
-10-sysvar-address-checking/insecure              -
+10-sysvar-address-checking/insecure              V029:17
 10-sysvar-address-checking/recommended           -
 10-sysvar-address-checking/secure                -
 2-owner-checks/insecure                          V002:24
 2-owner-checks/recommended                       -
 2-owner-checks/secure                            -
-3-type-cosplay/insecure                          -
+3-type-cosplay/insecure                          V030:25
 3-type-cosplay/recommended                       -
 3-type-cosplay/secure                            -
-4-initialization/insecure                        V002:31 V024:14
+4-initialization/insecure                        V002:31 V024:14 V030:31
 4-initialization/recommended                     V013:18
 4-initialization/secure                          V002:30 V024:17
 5-arbitrary-cpi/insecure                         V001:33 V002:31 V002:32 V002:33 V006:11 V009:11 V010:12 V021:33
@@ -81,7 +81,7 @@ Detector ID and line for every finding. `-` means no findings.
 8-pda-sharing/secure                             V009:38 V010:16 V021:23 V021:24 V024:16
 9-closing-accounts/insecure-still-still          V002:39 V024:14
 9-closing-accounts/insecure-still                V002:39 V024:13
-9-closing-accounts/insecure                      V002:24 V024:10
+9-closing-accounts/insecure                      V002:24 V024:10 V031:23
 9-closing-accounts/recommended                   V001:19 V002:19
 9-closing-accounts/secure                        V002:59 V002:64 V002:65 V024:13 V024:45
 ```
@@ -102,6 +102,6 @@ Detector ID and line for every finding. `-` means no findings.
 ## What this means
 
 - The core first-pass checks work: missing signer, missing owner, arbitrary CPI, bump canonicalization. With v0.2.0 they no longer fire once the bug is fixed by hand.
-- Five classes are still missed: type cosplay, reinitialization, duplicate mutable accounts, PDA sharing, account closing. These are the roadmap.
+- Three classes are still missed: reinitialization, duplicate mutable accounts (the sealevel example has no `mut`, so V028 stays quiet), PDA sharing. Closing accounts is caught in one of three variants. These are the roadmap.
 - V009, V010, V021 and V024 need tuning or a lower default severity. Use `--exclude` or `--severity` to cut noise today.
 - This is static analysis. It is a first pass, not an audit.
