@@ -12,7 +12,7 @@
 //!
 //! - typed `Account<'info, T>` fields
 //! - fields read through `try_deserialize`, `Account::try_from`, `AccountLoader`
-//! - handlers that mention `discriminator` next to the field
+//! - handlers that mention `discriminator` or a custom `discriminant` enum next to the field
 //!
 //! ## CWE Reference
 //!
@@ -58,6 +58,7 @@ impl TypeCosplayDetector {
         stmts.iter().any(|s| {
             s.contains(name)
                 && (s.contains("discriminator")
+                    || s.contains("discriminant")
                     || s.contains("DISCRIMINATOR")
                     || s.contains("try_deserialize")
                     || s.contains("Account::try_from")
@@ -202,6 +203,26 @@ pub struct Update<'info> {{
 pub fn update(ctx: Context<Update>) -> Result<()> {{
     require!(ctx.accounts.user.data.borrow()[..8] == User::DISCRIMINATOR, E::Bad);
     let u = User::try_from_slice(&ctx.accounts.user.data.borrow()[8..])?;
+    Ok(())
+}}
+"
+        );
+        assert!(run(&src).is_empty());
+    }
+
+    #[test]
+    fn ignores_custom_discriminant_enum_check() {
+        let src = format!(
+            "{H}
+#[derive(Accounts)]
+pub struct Update<'info> {{
+    user: AccountInfo<'info>,
+}}
+pub fn update(ctx: Context<Update>) -> Result<()> {{
+    let user = User::try_from_slice(&ctx.accounts.user.data.borrow()).unwrap();
+    if user.discriminant != AccountDiscriminant::User {{
+        return Err(ProgramError::InvalidAccountData.into());
+    }}
     Ok(())
 }}
 "
