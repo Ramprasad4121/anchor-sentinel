@@ -93,7 +93,7 @@ anchor-sentinel scan ./programs                     # subdirectories are include
 anchor-sentinel scan ./programs --severity high     # only High and Critical
 anchor-sentinel scan ./programs --only V001,V002    # run specific detectors
 anchor-sentinel scan ./programs --exclude V009,V010 # skip noisy detectors
-anchor-sentinel scan ./programs --format json       # json | markdown | github | terminal (default)
+anchor-sentinel scan ./programs --format json       # json | sarif | markdown | github | terminal (default)
 anchor-sentinel scan ./programs --format markdown --output ./reports   # writes security_report.md
 anchor-sentinel scan ./programs --generate-poc --output ./pocs         # exploit test scaffolds
 anchor-sentinel diff ./v1 ./v2                      # new and fixed issues between two versions
@@ -101,7 +101,18 @@ anchor-sentinel init                                # writes .github/workflows/s
 anchor-sentinel list                                # every detector with severity
 ```
 
-With `--format json` or `--format github` only the report goes to stdout (banner and status go to stderr), so you can pipe it into `jq` or a CI step. `github` prints GitHub Actions annotations so findings show inline on PRs.
+With `--format json`, `--format sarif` or `--format github` only the report goes to stdout (banner and status go to stderr), so you can pipe it into `jq` or a CI step. `github` prints GitHub Actions annotations so findings show inline on PRs.
+
+### GitHub code scanning (SARIF)
+
+`--format sarif` writes SARIF 2.1.0 with one rule per detector, the fix text on every result, repo relative paths, and a fingerprint that ignores line numbers so alerts keep their identity when code moves. Upload it like this:
+
+```yaml
+- run: anchor-sentinel scan . --format sarif --output results
+- uses: github/codeql-action/upload-sarif@v3
+  with:
+    sarif_file: results/anchor-sentinel.sarif
+```
 
 ### Exploit PoC scaffolds
 

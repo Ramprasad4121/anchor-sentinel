@@ -59,6 +59,8 @@ pub enum Commands {
         /// - `terminal`: Colorized console output (default)
         /// - `json`: Machine-readable JSON format
         /// - `markdown`: Human-readable Markdown report
+        /// - `sarif`: SARIF 2.1.0 for GitHub code scanning
+        /// - `github`: GitHub Actions annotations
         #[arg(short, long, default_value = "terminal")]
         format: String,
 
