@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- `--format sarif` for GitHub code scanning. SARIF 2.1.0 with one rule per detector, fix text, CWE tags, a `security-severity` score, repo relative paths, and line independent fingerprints. With `--output <dir>` it writes `anchor-sentinel.sarif`. The SARIF builder existed in the library but was not reachable from the CLI.
+
 ## v0.3.1 (21 Oct 2026)
 
 ### Added

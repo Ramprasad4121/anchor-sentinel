@@ -157,7 +157,7 @@ jobs:
 ///
 /// * `path` - The file or directory path to scan
 /// * `recursive` - Whether to scan directories recursively
-/// * `format` - Output format: "terminal", "json", or "markdown"
+/// * `format` - Output format: "terminal", "json", "sarif", "github", or "markdown"
 /// * `generate_poc` - Whether to generate TypeScript POC exploit tests
 /// * `output` - Optional output directory for reports and POC files
 /// * `min_severity` - Optional minimum severity level to include in results
@@ -181,7 +181,7 @@ fn run_scan(
 
     // json and github output must be parseable from stdout, so status lines
     // go to stderr for those formats.
-    let machine_output = matches!(format.as_str(), "json" | "github");
+    let machine_output = matches!(format.as_str(), "json" | "github" | "sarif");
 
     eprintln!(
         "{} {}",
@@ -222,6 +222,21 @@ fn run_scan(
     match format.as_str() {
         "json" => {
             println!("{}", serde_json::to_string_pretty(&report)?);
+        }
+        "sarif" => {
+            let sarif = anchor_sentinel::report::to_sarif(&report);
+            if let Some(ref out_path) = output {
+                std::fs::create_dir_all(out_path)?;
+                let sarif_path = out_path.join("anchor-sentinel.sarif");
+                std::fs::write(&sarif_path, &sarif)?;
+                eprintln!(
+                    "{} {}",
+                    "[+] SARIF saved to:".green(),
+                    sarif_path.display().to_string().yellow()
+                );
+            } else {
+                println!("{}", sarif);
+            }
         }
         "markdown" => {
             let md = report.to_markdown();

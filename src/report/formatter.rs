@@ -143,10 +143,11 @@ fn format_finding_markdown(finding: &Finding, index: usize) -> String {
     md
 }
 
-/// Converts a report to SARIF format for CI/CD integration.
+/// Converts a report to SARIF 2.1.0 for GitHub code scanning and other CI tools.
 ///
-/// SARIF (Static Analysis Results Interchange Format) is a standard format
-/// for static analysis tools that integrates with GitHub, Azure DevOps, etc.
+/// One rule is emitted per detector (not per finding), result locations use
+/// repo relative forward slash paths, and every result carries the fix text
+/// and a stable fingerprint so alerts keep their identity when lines move.
 ///
 /// # Arguments
 ///
@@ -156,6 +157,109 @@ fn format_finding_markdown(finding: &Finding, index: usize) -> String {
 ///
 /// A JSON string in SARIF 2.1.0 format.
 pub fn to_sarif(report: &Report) -> String {
+    use std::collections::BTreeMap;
+
+    fn level(sev: Severity) -> &'static str {
+        match sev {
+            Severity::Critical | Severity::High => "error",
+            Severity::Medium => "warning",
+            _ => "note",
+        }
+    }
+
+    // GitHub sorts alerts by this CVSS like number (>8 critical, >6 high, >3 medium).
+    fn security_severity(sev: Severity) -> &'static str {
+        match sev {
+            Severity::Critical => "9.5",
+            Severity::High => "8.0",
+            Severity::Medium => "5.5",
+            Severity::Low => "3.0",
+            Severity::Info => "1.0",
+        }
+    }
+
+    fn uri(path: &str) -> String {
+        let mut p = path.replace('\\', "/");
+        if let Ok(cwd) = std::env::current_dir() {
+            let cwd = cwd.to_string_lossy().replace('\\', "/");
+            if let Some(rest) = p.strip_prefix(&format!("{}/", cwd.trim_end_matches('/'))) {
+                p = rest.to_string();
+            }
+        }
+        while let Some(rest) = p.strip_prefix("./") {
+            p = rest.to_string();
+        }
+        p
+    }
+
+    // First finding per detector defines the rule text. Highest severity wins.
+    let mut rules: BTreeMap<&str, &Finding> = BTreeMap::new();
+    for f in &report.findings {
+        let keep = match rules.get(f.detector_id.as_str()) {
+            Some(prev) => f.severity > prev.severity,
+            None => true,
+        };
+        if keep {
+            rules.insert(f.detector_id.as_str(), f);
+        }
+    }
+    let rule_index: BTreeMap<&str, usize> = rules
+        .keys()
+        .enumerate()
+        .map(|(i, k)| (*k, i))
+        .collect();
+
+    let rules_json: Vec<_> = rules
+        .values()
+        .map(|f| {
+            let mut tags = vec!["security".to_string(), "solana".to_string(), "anchor".to_string()];
+            if let Some(cwe) = &f.cwe {
+                tags.push(format!("external/cwe/{}", cwe.to_lowercase()));
+            }
+            serde_json::json!({
+                "id": f.detector_id,
+                "name": f.title.replace(' ', ""),
+                "shortDescription": { "text": f.title },
+                "fullDescription": { "text": f.description },
+                "help": { "text": f.remediation },
+                "defaultConfiguration": { "level": level(f.severity) },
+                "properties": {
+                    "tags": tags,
+                    "security-severity": security_severity(f.severity)
+                }
+            })
+        })
+        .collect();
+
+    let results: Vec<_> = report
+        .findings
+        .iter()
+        .map(|f| {
+            let mut region = serde_json::json!({ "startLine": f.line.max(1) });
+            if let Some(snippet) = &f.code_snippet {
+                region["snippet"] = serde_json::json!({ "text": snippet });
+            }
+            let path = uri(&f.file_path);
+            serde_json::json!({
+                "ruleId": f.detector_id,
+                "ruleIndex": rule_index[f.detector_id.as_str()],
+                "level": level(f.severity),
+                "message": { "text": format!("{}\nFix: {}", f.description, f.remediation) },
+                "locations": [{
+                    "physicalLocation": {
+                        "artifactLocation": { "uri": path },
+                        "region": region
+                    },
+                    "logicalLocations": [{ "name": f.location }]
+                }],
+                "partialFingerprints": {
+                    "anchorSentinel/v1": format!("{}:{}:{}:{}", f.detector_id, path, f.location, f.title)
+                },
+                "properties": { "confidence": f.confidence }
+            })
+        })
+        .collect();
+
     serde_json::json!({
         "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
         "version": "2.1.0",
@@ -165,40 +269,10 @@ pub fn to_sarif(report: &Report) -> String {
                     "name": "Anchor-Sentinel",
                     "version": report.metadata.version,
                     "informationUri": "https://github.com/Ramprasad4121/anchor-sentinel",
-                    "rules": report.findings.iter().map(|f| {
-                        serde_json::json!({
-                            "id": f.detector_id,
-                            "name": f.title,
-                            "shortDescription": { "text": f.title },
-                            "fullDescription": { "text": f.description },
-                            "defaultConfiguration": {
-                                "level": match f.severity {
-                                    Severity::Critical | Severity::High => "error",
-                                    Severity::Medium => "warning",
-                                    _ => "note"
-                                }
-                            }
-                        })
-                    }).collect::<Vec<_>>()
+                    "rules": rules_json
                 }
             },
-            "results": report.findings.iter().map(|f| {
-                serde_json::json!({
-                    "ruleId": f.detector_id,
-                    "level": match f.severity {
-                        Severity::Critical | Severity::High => "error",
-                        Severity::Medium => "warning",
-                        _ => "note"
-                    },
-                    "message": { "text": f.description },
-                    "locations": [{
-                        "physicalLocation": {
-                            "artifactLocation": { "uri": f.file_path },
-                            "region": { "startLine": f.line }
-                        }
-                    }]
-                })
-            }).collect::<Vec<_>>()
+            "results": results
         }]
     })
     .to_string()
@@ -232,5 +306,90 @@ mod tests {
         assert!(md.contains("# Anchor-Sentinel Security Report"));
         assert!(md.contains("V001"));
         assert!(md.contains("Test Finding"));
+    }
+
+    fn finding(det: &str, sev: Severity, file: &str, line: usize) -> Finding {
+        Finding {
+            id: format!("{}-{}", det, line),
+            detector_id: det.to_string(),
+            title: format!("Title {}", det),
+            description: "Desc".to_string(),
+            severity: sev,
+            file_path: file.to_string(),
+            line,
+            location: "Ctx::field".to_string(),
+            code_snippet: Some("pub field: AccountInfo".to_string()),
+            remediation: "Use Signer".to_string(),
+            cwe: Some("CWE-862".to_string()),
+            confidence: 0.9,
+        }
+    }
+
+    #[test]
+    fn sarif_has_one_rule_per_detector_and_valid_indexes() {
+        let report = Report::new(
+            vec![
+                finding("V001", Severity::High, "./programs/a/src/lib.rs", 10),
+                finding("V001", Severity::High, "./programs/a/src/lib.rs", 20),
+                finding("V002", Severity::Low, "programs/b/src/lib.rs", 5),
+            ],
+            PathBuf::from("."),
+        );
+        let v: serde_json::Value = serde_json::from_str(&to_sarif(&report)).unwrap();
+        assert_eq!(v["version"], "2.1.0");
+        let run = &v["runs"][0];
+        let rules = run["tool"]["driver"]["rules"].as_array().unwrap();
+        assert_eq!(rules.len(), 2);
+        let results = run["results"].as_array().unwrap();
+        assert_eq!(results.len(), 3);
+        for r in results {
+            let idx = r["ruleIndex"].as_u64().unwrap() as usize;
+            assert_eq!(rules[idx]["id"], r["ruleId"]);
+        }
+        assert_eq!(rules[0]["properties"]["security-severity"], "8.0");
+        assert_eq!(results[0]["level"], "error");
+        assert_eq!(results[2]["level"], "note");
+        assert!(results[0]["message"]["text"].as_str().unwrap().contains("Fix: Use Signer"));
+    }
+
+    #[test]
+    fn sarif_uris_are_relative_and_lines_start_at_one() {
+        let cwd = std::env::current_dir().unwrap();
+        let abs = format!("{}/programs/a/src/lib.rs", cwd.display());
+        let report = Report::new(
+            vec![
+                finding("V001", Severity::High, "./programs/a/src/lib.rs", 0),
+                finding("V001", Severity::High, &abs, 3),
+            ],
+            PathBuf::from("."),
+        );
+        let v: serde_json::Value = serde_json::from_str(&to_sarif(&report)).unwrap();
+        let results = v["runs"][0]["results"].as_array().unwrap();
+        for r in results {
+            let loc = &r["locations"][0]["physicalLocation"];
+            assert_eq!(loc["artifactLocation"]["uri"], "programs/a/src/lib.rs");
+        }
+        assert_eq!(results[0]["locations"][0]["physicalLocation"]["region"]["startLine"], 1);
+        assert_eq!(results[1]["locations"][0]["physicalLocation"]["region"]["startLine"], 3);
+    }
+
+    #[test]
+    fn sarif_fingerprint_ignores_line_number() {
+        let a = Report::new(vec![finding("V001", Severity::High, "x.rs", 10)], PathBuf::from("."));
+        let b = Report::new(vec![finding("V001", Severity::High, "x.rs", 99)], PathBuf::from("."));
+        let fa: serde_json::Value = serde_json::from_str(&to_sarif(&a)).unwrap();
+        let fb: serde_json::Value = serde_json::from_str(&to_sarif(&b)).unwrap();
+        assert_eq!(
+            fa["runs"][0]["results"][0]["partialFingerprints"],
+            fb["runs"][0]["results"][0]["partialFingerprints"]
+        );
+    }
+
+    #[test]
+    fn sarif_empty_report_is_valid() {
+        let report = Report::new(vec![], PathBuf::from("."));
+        let v: serde_json::Value = serde_json::from_str(&to_sarif(&report)).unwrap();
+        assert_eq!(v["runs"][0]["results"].as_array().unwrap().len(), 0);
+        assert_eq!(v["runs"][0]["tool"]["driver"]["rules"].as_array().unwrap().len(), 0);
     }
 }
