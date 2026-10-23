@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.4.0 (23 Oct 2026)
+
 ### Added
 - V032 Precompile Offsets Not Checked. Flags a program that reads an Ed25519 or Secp256k1 precompile instruction back from the instructions sysvar and never checks the signature, public key and message instruction indexes. Without those checks an entry can name one key while the runtime verified another signature, so one real signature can count as several approvals. This is the class behind the Rain card program loss on Solana (about $1.1M, August 2026). Quiet when all three index fields are named, or when there are three or more compares against `u16::MAX`. https://blog.verichains.io/p/rain-hack-analysis-ed25519-signature
 - `--format sarif` for GitHub code scanning. SARIF 2.1.0 with one rule per detector, fix text, CWE tags, a `security-severity` score, repo relative paths, and line independent fingerprints. With `--output <dir>` it writes `anchor-sentinel.sarif`. The SARIF builder existed in the library but was not reachable from the CLI.
