@@ -166,6 +166,7 @@ Output of `anchor-sentinel list` (30 detectors; ID V020 is not used):
 | V029 | Unchecked Sysvar Address | Medium |
 | V030 | Type Cosplay | High |
 | V031 | Manual Close Without Cleanup | Medium |
+| V032 | Precompile Offsets Not Checked | High |
 
 ## Benchmark
 

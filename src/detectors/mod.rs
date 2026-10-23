@@ -27,6 +27,7 @@ mod integer_overflow;
 mod missing_owner;
 mod missing_signer;
 mod pda_collision;
+mod precompile_offsets;
 mod pda_bump;
 mod unchecked_transfer;
 mod authority_delegation;
@@ -83,6 +84,7 @@ pub use precision_loss::PrecisionLossDetector;
 pub use scope_validation::ScopeValidationDetector;
 pub use duplicate_mutable::DuplicateMutableDetector;
 pub use sysvar_address::SysvarAddressDetector;
+pub use precompile_offsets::PrecompileOffsetsDetector;
 pub use type_cosplay::TypeCosplayDetector;
 pub use closing_accounts::ClosingAccountsDetector;
 
@@ -218,6 +220,8 @@ impl DetectorRegistry {
             Box::new(TypeCosplayDetector::new()),
             // Account lifecycle: V031 (Manual Close Without Cleanup)
             Box::new(ClosingAccountsDetector::new()),
+            // Signature precompiles: V032 (Precompile Offsets Not Checked)
+            Box::new(PrecompileOffsetsDetector::new()),
         ];
 
         Self { detectors }
