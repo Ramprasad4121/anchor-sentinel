@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Added
+- V033 Vulnerable anchor-lang Version. When you scan a directory, `Cargo.toml` and `Cargo.lock` are checked for anchor-lang 1.0.0 or 1.0.1. In those releases `Program<'info, System>` accepts any executable account (RUSTSEC-2026-0144, CVE-2026-45137), fixed in 1.0.2. A lock file that resolves a fixed version silences the `Cargo.toml` finding. Older versions and 1.0.0 release candidates are not flagged. https://rustsec.org/advisories/RUSTSEC-2026-0144
+
 ## v0.4.0 (23 Oct 2026)
 
 ### Added

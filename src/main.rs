@@ -328,6 +328,9 @@ fn perform_scan(path: &PathBuf, recursive: bool) -> Result<Vec<Finding>> {
     };
 
     if files.is_empty() {
+        if path.is_dir() {
+            return Ok(anchor_sentinel::manifest::scan_dir(path));
+        }
         return Ok(Vec::new());
     }
 
@@ -364,6 +367,9 @@ fn perform_scan(path: &PathBuf, recursive: bool) -> Result<Vec<Finding>> {
     }
 
     pb.finish_and_clear();
+    if path.is_dir() {
+        all_findings.extend(anchor_sentinel::manifest::scan_dir(path));
+    }
     Ok(all_findings)
 }
 
