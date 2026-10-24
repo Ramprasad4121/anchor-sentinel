@@ -167,6 +167,7 @@ Output of `anchor-sentinel list` (30 detectors; ID V020 is not used):
 | V030 | Type Cosplay | High |
 | V031 | Manual Close Without Cleanup | Medium |
 | V032 | Precompile Offsets Not Checked | High |
+| V033 | Vulnerable anchor-lang Version (1.0.0, 1.0.1) | High |
 
 ## Benchmark
 

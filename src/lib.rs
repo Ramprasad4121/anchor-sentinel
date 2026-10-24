@@ -31,6 +31,7 @@
 pub mod analysis;
 pub mod cli;
 pub mod detectors;
+pub mod manifest;
 pub mod parser;
 pub mod poc_generator;
 pub mod report;
