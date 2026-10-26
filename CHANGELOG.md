@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.5.0 (26 Oct 2026)
+
 ### Added
 
 - V034 Reinitialization (sealevel-attacks class 4). Flags a raw `AccountInfo` or `UncheckedAccount` that a handler reads with Borsh and writes back through `try_borrow_mut_data` with no initialized flag, discriminator or empty data check. Quiet for `#[account(init)]`, typed accounts, read only handlers and any handler that checks `is_initialized`, `discriminator`, `data_is_empty()` or `lamports() == 0`. Benchmark: sealevel `4-initialization/insecure` is now flagged, `secure` and `recommended` stay quiet for V034.

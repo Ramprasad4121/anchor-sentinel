@@ -1,6 +1,6 @@
 [package]
 name = "anchor-sentinel"
-version = "0.4.0"
+version = "0.5.0"
 edition = "2021"
 authors = ["Ramprasad"]
 description = "A CLI security tool for static analysis of Solana Anchor smart contracts"
