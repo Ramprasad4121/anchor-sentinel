@@ -3,6 +3,8 @@
 ## Unreleased
 
 ### Added
+
+- V034 Reinitialization (sealevel-attacks class 4). Flags a raw `AccountInfo` or `UncheckedAccount` that a handler reads with Borsh and writes back through `try_borrow_mut_data` with no initialized flag, discriminator or empty data check. Quiet for `#[account(init)]`, typed accounts, read only handlers and any handler that checks `is_initialized`, `discriminator`, `data_is_empty()` or `lamports() == 0`. Benchmark: sealevel `4-initialization/insecure` is now flagged, `secure` and `recommended` stay quiet for V034.
 - V033 Vulnerable anchor-lang Version. When you scan a directory, `Cargo.toml` and `Cargo.lock` are checked for anchor-lang 1.0.0 or 1.0.1. In those releases `Program<'info, System>` accepts any executable account (RUSTSEC-2026-0144, CVE-2026-45137), fixed in 1.0.2. A lock file that resolves a fixed version silences the `Cargo.toml` finding. Older versions and 1.0.0 release candidates are not flagged. https://rustsec.org/advisories/RUSTSEC-2026-0144
 
 ## v0.4.0 (23 Oct 2026)

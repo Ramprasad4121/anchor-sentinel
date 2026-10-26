@@ -54,6 +54,7 @@ mod duplicate_mutable;
 mod sysvar_address;
 mod type_cosplay;
 mod closing_accounts;
+mod reinit;
 pub mod utils;
 
 pub use integer_overflow::IntegerOverflowDetector;
@@ -87,6 +88,7 @@ pub use sysvar_address::SysvarAddressDetector;
 pub use precompile_offsets::PrecompileOffsetsDetector;
 pub use type_cosplay::TypeCosplayDetector;
 pub use closing_accounts::ClosingAccountsDetector;
+pub use reinit::ReinitDetector;
 
 use crate::parser::AnalysisContext;
 use crate::report::{Finding, Severity};
@@ -222,6 +224,8 @@ impl DetectorRegistry {
             Box::new(ClosingAccountsDetector::new()),
             // Signature precompiles: V032 (Precompile Offsets Not Checked)
             Box::new(PrecompileOffsetsDetector::new()),
+            // Account lifecycle: V034 (Reinitialization)
+            Box::new(ReinitDetector::new()),
         ];
 
         Self { detectors }

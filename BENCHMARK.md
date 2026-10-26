@@ -34,7 +34,7 @@ Detected = the right detector fires on the vulnerable account or call, at the ri
 | 1 | Account data matching | Partial. V002 flags the unchecked `token` account (line 20) as a missing owner check. The data mismatch itself is not modelled | n/a. V002 still fires, correctly: this secure version adds the data check but still has no owner check | Yes |
 | 2 | Owner checks | Yes, V002 line 24 | Yes (v0.1.0: no) | Yes |
 | 3 | Type cosplay | Yes, V030 line 25 (added 19 Oct 2026). Secure version is quiet: it checks a custom `discriminant` enum, which V030 now accepts | Yes, no V030 | Yes, no V030 |
-| 4 | Initialization (reinit) | **Missed.** V002/V024 fire on other things, not the reinit | n/a | n/a |
+| 4 | Initialization (reinit) | Yes, V034 line 31 (added 26 Oct 2026). The `secure` version checks a `discriminator` flag before writing and is quiet for V034 | Yes, no V034 | Yes, no V034 |
 | 5 | Arbitrary CPI | Yes, V006 line 11 | Yes (v0.1.0: no, V006 fired twice) | Yes |
 | 6 | Duplicate mutable accounts | **Missed.** V028 exists now, but this example has no `mut` on either account, so V028 (which needs two `mut` accounts of one type) does not fire. Rerun 17 Oct 2026: all other results unchanged | n/a | n/a |
 | 7 | Bump seed canonicalization | Yes, V008 line 11 | Yes (v0.1.0: no, V008 fired twice) | Yes |
@@ -42,7 +42,7 @@ Detected = the right detector fires on the vulnerable account or call, at the ri
 | 9 | Closing accounts (3 insecure variants) | **Partial.** V031 line 23 flags `insecure` (lamports set to 0, data and owner untouched). `insecure-still` and `insecure-still-still` zero the data first and are not flagged on purpose: the zeroed discriminator makes `Account<T>` reject the account, and Anchor 0.30 removed the closed account discriminator | Yes, no V031 on `secure` | Yes, uses `close = destination`, no V031 |
 | 10 | Sysvar address checking | Yes, V029 line 17 (added 19 Oct 2026) | Yes, no V029 | Yes, uses `Sysvar<'info, Rent>`, no V029 |
 
-Score: 6 detected, 2 partial (1 and 9), 3 missed (4, 6, 8). Rerun on 21 Oct 2026 against sealevel-attacks main; the findings for the other classes are unchanged from the 11 Oct run.
+Score: 7 detected, 2 partial (1 and 9), 2 missed (6, 8). Rerun on 26 Oct 2026 (class 4 added, other results unchanged). Previous full rerun on 21 Oct 2026 against sealevel-attacks main; the findings for the other classes are unchanged from the 11 Oct run.
 
 ## Raw output (main, 21 Oct 2026)
 
@@ -64,7 +64,7 @@ Detector ID and line for every finding. `-` means no findings.
 3-type-cosplay/insecure                          V030:25
 3-type-cosplay/recommended                       -
 3-type-cosplay/secure                            -
-4-initialization/insecure                        V002:31 V024:14 V030:31
+4-initialization/insecure                        V002:31 V024:14 V030:31 V034:31
 4-initialization/recommended                     V013:18
 4-initialization/secure                          V002:30 V024:17
 5-arbitrary-cpi/insecure                         V001:33 V002:31 V002:32 V002:33 V006:11 V009:11 V010:12 V021:33
@@ -102,6 +102,6 @@ Detector ID and line for every finding. `-` means no findings.
 ## What this means
 
 - The core first-pass checks work: missing signer, missing owner, arbitrary CPI, bump canonicalization. With v0.2.0 they no longer fire once the bug is fixed by hand.
-- Three classes are still missed: reinitialization, duplicate mutable accounts (the sealevel example has no `mut`, so V028 stays quiet), PDA sharing. Closing accounts is caught in one of three variants. These are the roadmap.
+- Two classes are still missed: duplicate mutable accounts (the sealevel example has no `mut`, so V028 stays quiet), PDA sharing. Closing accounts is caught in one of three variants. These are the roadmap.
 - V009, V010, V021 and V024 need tuning or a lower default severity. Use `--exclude` or `--severity` to cut noise today.
 - This is static analysis. It is a first pass, not an audit.
